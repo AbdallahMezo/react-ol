@@ -9,10 +9,10 @@ Functional, composed, extended and react wrapper for OpenLayers
 ## 📦 Usage
 You should have a basic knowledge about [openlayers]([https://openlayers.org/](https://openlayers.org/)) , [basic concepts]([https://openlayers.org/en/latest/doc/tutorials/concepts.html](https://openlayers.org/en/latest/doc/tutorials/concepts.html)) and [how it works]([https://openlayers.org/en/latest/doc/quickstart.html](https://openlayers.org/en/latest/doc/quickstart.html)). 
 ### 🚀  Basic Usage that renders just a map canvas using `osm` raster layers.
-```javascript
+```jsx
 	import React from 'react'
-	import {Map} from 'wakecap-ol`
-	import { fromLonLat } from  'ol/proj';
+	import {Map} from 'wakecap-ol'
+	import { fromLonLat } from  'ol/proj'
 
 	function DemoMap(){
 		return (
@@ -22,10 +22,10 @@ You should have a basic knowledge about [openlayers]([https://openlayers.org/](h
 ```
 ### ⚡ Rendering a map with features
 Currently available features are `marker` and `polygon`
-```javascript
+```jsx
 	import React from 'react'
-	import {Map, Marker, Polygon, Vector} from 'wakecap-ol`
-	import { fromLonLat } from  'ol/proj';
+	import {Map, Marker, Polygon, Vector} from 'wakecap-ol'
+	import { fromLonLat } from  'ol/proj'
 		
 	const polygonCoordinates = [[15.125, 14.36],
 								[15.245, 14.46],
