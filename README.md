@@ -5,7 +5,7 @@
 Functional, composed, extended and react wrapper for OpenLayers
 
 ## 🤹 Installation
-`npm install <bitbucket repo url>`
+`npm install https://mezo@bitbucket.org/wakecapteam/wakecap-ol.git`
 ## 📦 Usage
 You should have a basic knowledge about [openlayers]([https://openlayers.org/](https://openlayers.org/)) , [basic concepts]([https://openlayers.org/en/latest/doc/tutorials/concepts.html](https://openlayers.org/en/latest/doc/tutorials/concepts.html)) and [how it works]([https://openlayers.org/en/latest/doc/quickstart.html](https://openlayers.org/en/latest/doc/quickstart.html)). 
 ### 🚀  Basic Usage that renders just a map canvas using `osm` raster layers.
