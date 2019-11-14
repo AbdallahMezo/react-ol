@@ -9,7 +9,7 @@ Functional, composed, extended and react wrapper for OpenLayers
 ## 📦 Usage
 You should have a basic knowledge about [openlayers]([https://openlayers.org/](https://openlayers.org/)) , [basic concepts]([https://openlayers.org/en/latest/doc/tutorials/concepts.html](https://openlayers.org/en/latest/doc/tutorials/concepts.html)) and [how it works]([https://openlayers.org/en/latest/doc/quickstart.html](https://openlayers.org/en/latest/doc/quickstart.html)). 
 ### 🚀  Basic Usage that renders just a map canvas using `osm` raster layers.
-```javascript
+```jsx
 	import React from 'react'
 	import {Map} from 'wakecap-ol`
 	import { fromLonLat } from  'ol/proj';
@@ -22,7 +22,7 @@ You should have a basic knowledge about [openlayers]([https://openlayers.org/](h
 ```
 ### ⚡ Rendering a map with features
 Currently available features are `marker` and `polygon`
-```javascript
+```jsx
 	import React from 'react'
 	import {Map, Marker, Polygon, Vector} from 'wakecap-ol`
 	import { fromLonLat } from  'ol/proj';
@@ -47,6 +47,7 @@ Check the docs below for more `props` and available configurations.
 ### Components:
 ### Map
 Map component `props` and `options` 
+
 |prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
 | `zoom` |`number`  |`false`  | `3` | `1 - 16` | initial zoom level |
@@ -57,6 +58,7 @@ Map component `props` and `options`
 ### Vector
 
 @see `ol/layer/Vector`
+
 |prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
 | `source` |`VectorSource`  | `false` | `new VectorSource({})` |  | source of the vector @see `ol/source/VectorSource` |
@@ -66,6 +68,7 @@ Map component `props` and `options`
 One of the main purposes to create this library is to manage an image map with custom images and projection, so by default this layer applies a [pixel projection](https://openlayers.org/en/latest/apidoc/module-ol_proj_Projection-Projection.html) extented with `width` and `height` provided to the component.
 
 @see `ol/layer/Image`
+
 |prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
 | `src` |`url`  | `true` |  |  | Image source |
@@ -78,6 +81,7 @@ One of the main purposes to create this library is to manage an image map with c
 ### Marker
 OpenLayers dont have something called marker, but we use `Point` Feature as a marker here
 @see `ol/geom/Point`
+
 |prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
 | `position` |`Coordinate`  | `true` |  |  | Position of the marker |
@@ -90,6 +94,7 @@ OpenLayers dont have something called marker, but we use `Point` Feature as a ma
 
 ### Polygon
 @see `ol/geom/Polygon`
+
 |prop|type| required | default value | options | description | 
 |--|--|--|--| -- | -- |
 | `coordinates` |`Coordinate[][]`  | `true` |  |  | Polygon Coordinates |
@@ -105,6 +110,7 @@ OpenLayers dont have something called marker, but we use `Point` Feature as a ma
 ### Draw
 Should be wrapped in `Vector` component
 @see `ol/interaction/Draw`
+
 |prop|type| required | default value | options | description | 
 |--|--|--|--| -- | -- |
 | `source` |`VectorSource`  | `false` | `new VectorSource({})` |  | source of the vector @see `ol/source/VectorSource` |
