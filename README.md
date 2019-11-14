@@ -1,8 +1,10 @@
 
 # wakecap-ol   
+Functional, composed, extended and react wrapper for OpenLayers   
+
 ![Version](https://img.shields.io/badge/version-0.0.1-green)  ![enter image description here](https://img.shields.io/badge/Stable-beta-red)  [![CircleCI](https://circleci.com/bb/wakecapteam/wakecap-ol.svg?style=svg)](https://circleci.com/bb/wakecapteam/wakecap-ol)
 
-Functional, composed, extended and react wrapper for OpenLayers
+
 
 ## 🤹 Installation
 `npm install https://mezo@bitbucket.org/wakecapteam/wakecap-ol.git`
