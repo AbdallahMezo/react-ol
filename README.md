@@ -1,6 +1,6 @@
 
 # wakecap-ol   
-![Version](https://img.shields.io/badge/version-0.0.1-green)  ![enter image description here](https://img.shields.io/badge/Stable-beta-red)
+![Version](https://img.shields.io/badge/version-0.0.1-green)  ![enter image description here](https://img.shields.io/badge/Stable-beta-red)  [![CircleCI](https://circleci.com/bb/wakecapteam/wakecap-ol.svg?style=svg)](https://circleci.com/bb/wakecapteam/wakecap-ol)
 
 Functional, composed, extended and react wrapper for OpenLayers
 
@@ -9,7 +9,7 @@ Functional, composed, extended and react wrapper for OpenLayers
 ## 📦 Usage
 You should have a basic knowledge about [openlayers]([https://openlayers.org/](https://openlayers.org/)) , [basic concepts]([https://openlayers.org/en/latest/doc/tutorials/concepts.html](https://openlayers.org/en/latest/doc/tutorials/concepts.html)) and [how it works]([https://openlayers.org/en/latest/doc/quickstart.html](https://openlayers.org/en/latest/doc/quickstart.html)). 
 ### 🚀  Basic Usage that renders just a map canvas using `osm` raster layers.
-```jsx
+```javascript
 	import React from 'react'
 	import {Map} from 'wakecap-ol`
 	import { fromLonLat } from  'ol/proj';
@@ -22,7 +22,7 @@ You should have a basic knowledge about [openlayers]([https://openlayers.org/](h
 ```
 ### ⚡ Rendering a map with features
 Currently available features are `marker` and `polygon`
-```jsx
+```javascript
 	import React from 'react'
 	import {Map, Marker, Polygon, Vector} from 'wakecap-ol`
 	import { fromLonLat } from  'ol/proj';

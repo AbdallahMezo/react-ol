@@ -1,0 +1,53 @@
+# See https://help.github.com/ignore-files/ for more about ignoring files.
+
+##################################
+# Operating System specific files
+#################################
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+#####################
+# Application Files
+#####################
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+##############
+# Node Modules
+##############
+
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+###################
+# IDE Configuration
+###################
+
+# Jetbrains IDE
+/**/.idea
+*.iml
+
+# Netbeans
+/**/nbproject
+
+# Visual Studio Code
+/**/.vscode
