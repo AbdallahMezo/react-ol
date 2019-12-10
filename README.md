@@ -1,6 +1,6 @@
 
-# wakecap-ol   
-Functional, composed, extended and react wrapper for OpenLayers   
+# wakecap-ol
+Functional, composed, extended and react wrapper for OpenLayers
 
 ![Version](https://img.shields.io/badge/version-0.0.1-green)  ![enter image description here](https://img.shields.io/badge/Stable-beta-red)  [![CircleCI](https://circleci.com/bb/wakecapteam/wakecap-ol.svg?style=svg)](https://circleci.com/bb/wakecapteam/wakecap-ol)
 
@@ -9,7 +9,7 @@ Functional, composed, extended and react wrapper for OpenLayers
 ## 🤹 Installation
 `npm install https://mezo@bitbucket.org/wakecapteam/wakecap-ol.git`
 ## 📦 Usage
-You should have a basic knowledge about [openlayers]([https://openlayers.org/](https://openlayers.org/)) , [basic concepts]([https://openlayers.org/en/latest/doc/tutorials/concepts.html](https://openlayers.org/en/latest/doc/tutorials/concepts.html)) and [how it works]([https://openlayers.org/en/latest/doc/quickstart.html](https://openlayers.org/en/latest/doc/quickstart.html)). 
+You should have a basic knowledge about [openlayers]([https://openlayers.org/](https://openlayers.org/)) , [basic concepts]([https://openlayers.org/en/latest/doc/tutorials/concepts.html](https://openlayers.org/en/latest/doc/tutorials/concepts.html)) and [how it works]([https://openlayers.org/en/latest/doc/quickstart.html](https://openlayers.org/en/latest/doc/quickstart.html)).
 ### 🚀  Basic Usage that renders just a map canvas using `osm` raster layers.
 ```jsx
 	import React from 'react'
@@ -28,7 +28,7 @@ Currently available features are `marker` and `polygon`
 	import React from 'react'
 	import {Map, Marker, Polygon, Vector} from 'wakecap-ol'
 	import { fromLonLat } from  'ol/proj'
-		
+
 	const polygonCoordinates = [[15.125, 14.36],
 								[15.245, 14.46],
 								[15.344, 14.66],
@@ -48,7 +48,7 @@ Check the docs below for more `props` and available configurations.
 ## Options and props
 ### Components:
 ### Map
-Map component `props` and `options` 
+Map component `props` and `options`
 
 |prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
@@ -76,7 +76,7 @@ One of the main purposes to create this library is to manage an image map with c
 | `src` |`url`  | `true` |  |  | Image source |
 | `width` | `number` | `true` |  |  | Image width |
 | `height` | `number` | `true` |  |  | Image Height |
-| `zoom` | `number` | `false` | `2` | `minZoom - maxZoom` | zoom level | 
+| `zoom` | `number` | `false` | `2` | `minZoom - maxZoom` | zoom level |
 | `minZoom` | `number` | `false` | `1` | `1 - 16` | min zoom level |
 | `maxZoom` | `number` | `false` | `6` | `1 - 16` | max zoom level |
 
@@ -89,7 +89,7 @@ OpenLayers dont have something called marker, but we use `Point` Feature as a ma
 | `position` |`Coordinate`  | `true` |  |  | Position of the marker |
 | `color` | `string` | `false` | `rgba(35, 187, 245, 1)` | `HEX` or `RGBA` or `color string` | Color of the marker |
 | `icon` | `url` | `false` |  | `png` | If provided it applies as a marker image/icon and no other styles apply |
-| `stroke` | `number` | `false` | `2` | `number | stroke width around the marker | 
+| `stroke` | `number` | `false` | `2` | `number | stroke width around the marker |
 | `width` | `number` | `false` | `10` | `number` | width of the marker |
 | `isDraggable` | `boolean` | `false` | `false` | `true` or `false` | if you want to move the marker on the map |
 | `onDragEnd` | `function` | `false` | | `function(newPosition, oldPosition)`| Drag end handler |
@@ -97,7 +97,7 @@ OpenLayers dont have something called marker, but we use `Point` Feature as a ma
 ### Polygon
 @see `ol/geom/Polygon`
 
-|prop|type| required | default value | options | description | 
+|prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
 | `coordinates` |`Coordinate[][]`  | `true` |  |  | Polygon Coordinates |
 | `color` | `string` | `false` | `rgba(35, 187, 245, 1)` | `HEX` or `RGBA` or `color string` | Color of the polygon fill |
@@ -113,7 +113,7 @@ OpenLayers dont have something called marker, but we use `Point` Feature as a ma
 Should be wrapped in `Vector` component
 @see `ol/interaction/Draw`
 
-|prop|type| required | default value | options | description | 
+|prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
 | `source` |`VectorSource`  | `false` | `new VectorSource({})` |  | source of the vector @see `ol/source/VectorSource` |
 | `type` | `GeometryType` | `false` | `Polygon` |  | Shape type |
@@ -122,19 +122,19 @@ Should be wrapped in `Vector` component
 | `onDragEnd` | `function` | `false` | | `function(newPosition, oldPosition)`| Drag end handler if `allowUpdateDrawnFeatures` is enabled |
 | `onEditEnd` | `function` | `false` | | `function(coordinates)`| Edit end handler if `allowUpdateDrawnFeatures` is enabled |
 
-### Custom 
+### Custom
 ### withPixelTransformation
 TBD
 
 ## TODO
-#### Components: 
+#### Components:
 - Layer
 - Popup
 - Overlay
-#### Interactions: 
+#### Interactions:
 - Drag and drop
 - Modify
-- Translate 
+- Translate
 
 ## License
 This library is created for [WakeCap](https://wakecap.com)
