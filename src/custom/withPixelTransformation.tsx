@@ -11,30 +11,28 @@ import Transform from '../core/transform';
  * @returns {React.ComponentType}
  */
 function WithPixelTransformation(
-	width: number,
-	height: number,
-	controlPoints: Coordinate[]
+    width: number,
+    height: number,
+    controlPoints: Coordinate[]
 ): (WrapperComponent: React.ComponentType<any>) => React.ComponentType {
-	// Init Helmert Transformation
-	const transformation = new Transform.Helmert();
+    // Init Helmert Transformation
+    const transformation = new Transform.Helmert();
 
-	// set control points to transformation
-	transformation.setControlPoints(controlPoints, [
-		[0, 0],
-		[width, 0],
-		[0, height],
-		[width, height]
-	]);
+    // set control points to transformation
+    transformation.setControlPoints(controlPoints, [
+        [0, 0],
+        [width, 0],
+        [0, height],
+        [width, height]
+    ]);
 
-	return function(WrapperComponent: React.ComponentType<any>): React.ComponentType {
-		return class extends React.Component {
-
-			render(): JSX.Element {
-				return <WrapperComponent {...this.props} transformation={transformation}/>;
-			}
-		
-		};
-	};
+    return function(WrapperComponent: React.ComponentType<any>): React.ComponentType {
+        return class extends React.Component {
+            render(): JSX.Element {
+                return <WrapperComponent {...this.props} transformation={transformation} />;
+            }
+        };
+    };
 }
 
 export default WithPixelTransformation;

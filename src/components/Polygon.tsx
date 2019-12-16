@@ -9,14 +9,14 @@ import { Coordinate } from 'ol/coordinate';
 import { usePrevious } from '../custom/hooks';
 
 export interface IPolygonProps {
-	coordinates: Coordinate[][];
-	color?: string;
-	strokeColor?: string;
-	strokeWidth?: number;
-	isEditable?: boolean;
-	isDraggable?: boolean;
-	onDragEnd?: (coordinates?: Coordinate[][]) => any;
-	onEditEnd?: (coordinates?: Coordinate[][]) => any;
+    coordinates: Coordinate[][];
+    color?: string;
+    strokeColor?: string;
+    strokeWidth?: number;
+    isEditable?: boolean;
+    isDraggable?: boolean;
+    onDragEnd?: (coordinates?: Coordinate[][]) => any;
+    onEditEnd?: (coordinates?: Coordinate[][]) => any;
 }
 
 /**
@@ -25,103 +25,103 @@ export interface IPolygonProps {
  * @returns {Style} style to be applied to the polygon
  */
 function getPolygonStyles(props: IPolygonProps): Style {
-	const options: StyleOptions = {};
+    const options: StyleOptions = {};
 
-	options.fill = new Fill({ color: props.color || 'rgba(0, 0, 255, 0.1)' });
+    options.fill = new Fill({ color: props.color || 'rgba(0, 0, 255, 0.1)' });
 
-	options.stroke = new Stroke({
-		color: props.strokeColor || 'red',
-		width: props.strokeWidth || 2
-	});
+    options.stroke = new Stroke({
+        color: props.strokeColor || 'red',
+        width: props.strokeWidth || 2
+    });
 
-	return new Style(options);
+    return new Style(options);
 }
 
 function Polygon(props: IPolygonProps): JSX.Element {
-	const polygon = useRef<Feature>();
-	const VectorContext = useVectorContext();
-	const previousVectorContext = usePrevious(VectorContext);
+    const polygon = useRef<Feature>();
+    const VectorContext = useVectorContext();
+    const previousVectorContext = usePrevious(VectorContext);
 
-	useEffect((): void => {
-		polygon.current = new Feature({
-			geometry: new BasePolygon(props.coordinates)
-		});
-		// eslint-disable-next-line
-	}, []);
+    useEffect((): void => {
+        polygon.current = new Feature({
+            geometry: new BasePolygon(props.coordinates)
+        });
+        // eslint-disable-next-line
+    }, []);
 
-	/**
-	 * @description Checks if the polygon is draggable and mapcontext updated
-	 * to apply drag interaction to the polygon
-	 */
-	useEffect((): void => {
-		if (props.isDraggable && VectorContext.map && polygon.current) {
-			// create translate to bind translatable features to map context interaction
-			const translate = new Translate({
-				features: new Collection([polygon.current])
-			});
-			// handle dragend
-			translate.on('translateend', function(event: any): void {
-				event.stopPropagation();
-				// @ts-ignore
-				const coordinates = polygon.current.getGeometry().getCoordinates();
-				// check if callback is passed through props and call it with new and old
-				// coordinates
-				props.onDragEnd && props.onDragEnd(coordinates);
-			});
-			// bind the interaction to map context
-			VectorContext.map.getInteractions().push(translate);
-		}
-		// eslint-disable-next-line
-	}, [VectorContext.map, props.isDraggable]);
+    /**
+     * @description Checks if the polygon is draggable and mapcontext updated
+     * to apply drag interaction to the polygon
+     */
+    useEffect((): void => {
+        if (props.isDraggable && VectorContext.map && polygon.current) {
+            // create translate to bind translatable features to map context interaction
+            const translate = new Translate({
+                features: new Collection([polygon.current])
+            });
+            // handle dragend
+            translate.on('translateend', function(event: any): void {
+                event.stopPropagation();
+                // @ts-ignore
+                const coordinates = polygon.current.getGeometry().getCoordinates();
+                // check if callback is passed through props and call it with new and old
+                // coordinates
+                props.onDragEnd && props.onDragEnd(coordinates);
+            });
+            // bind the interaction to map context
+            VectorContext.map.getInteractions().push(translate);
+        }
+        // eslint-disable-next-line
+    }, [VectorContext.map, props.isDraggable]);
 
-	/**
-	 * @description Checks if the polygon is draggable and mapcontext updated
-	 * to apply drag interaction to the polygon
-	 */
-	useEffect((): void => {
-		if (props.isEditable && VectorContext.map && polygon.current) {
-			// create translate to bind translatable features to map context interaction
-			const modify = new Modify({
-				features: new Collection([polygon.current])
-			});
+    /**
+     * @description Checks if the polygon is draggable and mapcontext updated
+     * to apply drag interaction to the polygon
+     */
+    useEffect((): void => {
+        if (props.isEditable && VectorContext.map && polygon.current) {
+            // create translate to bind translatable features to map context interaction
+            const modify = new Modify({
+                features: new Collection([polygon.current])
+            });
 
-			// handle dragend
-			modify.on('modifyend', function(event): any {
-				event.stopPropagation();
-				// @ts-ignore
-				const coordinates = polygon.current.getGeometry().getCoordinates();
-				// check if callback is passed through props and call it with new and old
-				// coordinates
-				props.onEditEnd && props.onEditEnd(coordinates);
-			});
-			// bind the interaction to map context
-			VectorContext.map.getInteractions().push(modify);
-		}
-		// eslint-disable-next-line
-	}, [VectorContext.map, props.isEditable]);
+            // handle dragend
+            modify.on('modifyend', function(event): any {
+                event.stopPropagation();
+                // @ts-ignore
+                const coordinates = polygon.current.getGeometry().getCoordinates();
+                // check if callback is passed through props and call it with new and old
+                // coordinates
+                props.onEditEnd && props.onEditEnd(coordinates);
+            });
+            // bind the interaction to map context
+            VectorContext.map.getInteractions().push(modify);
+        }
+        // eslint-disable-next-line
+    }, [VectorContext.map, props.isEditable]);
 
-	/**
-	 * @description update the parent vector context if exists and add feature to its
-	 * source
-	 */
-	useEffect((): void => {
-		// check if there is no vector layer throw an error
-		if (VectorContext && !VectorContext.vector && previousVectorContext) {
-			throw new Error(
-				'Vector layer is not found, Polygon maybe defined without vector layer component'
-			);
-		}
-		if (VectorContext.vector && polygon.current) {
-			// set polygon styles
-			polygon.current.setStyle(getPolygonStyles(props));
+    /**
+     * @description update the parent vector context if exists and add feature to its
+     * source
+     */
+    useEffect((): void => {
+        // check if there is no vector layer throw an error
+        if (VectorContext && !VectorContext.vector && previousVectorContext) {
+            throw new Error(
+                'Vector layer is not found, Polygon maybe defined without vector layer component'
+            );
+        }
+        if (VectorContext.vector && polygon.current) {
+            // set polygon styles
+            polygon.current.setStyle(getPolygonStyles(props));
 
-			// Add the polygon as a feature to vector layer
-			VectorContext.vector.getSource().addFeature(polygon.current);
-		}
-		// eslint-disable-next-line
-	}, [VectorContext.vector, previousVectorContext]);
+            // Add the polygon as a feature to vector layer
+            VectorContext.vector.getSource().addFeature(polygon.current);
+        }
+        // eslint-disable-next-line
+    }, [VectorContext.vector, previousVectorContext]);
 
-	return <></>;
+    return <></>;
 }
 
 export default Polygon;
