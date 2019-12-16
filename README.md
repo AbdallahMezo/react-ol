@@ -123,6 +123,19 @@ Should be wrapped in `Vector` component
 | `onEditEnd` | `function` | `false` | | `function(coordinates)`| Edit end handler if `allowUpdateDrawnFeatures` is enabled |
 
 ### Custom
+### Tooltip
+Wrap open layers features in `Tooltip` to show tooltip component on hovering the feature
+@see `ol/overlay`
+
+|prop|type| required | default value | options | description |
+|--|--|--|--| -- | -- |
+| `element` |`HTMLDivElement`  | `false` | `document.createElement('div')` |  | Tooltip div container |
+| `children` | `Feature` | `true` |  |  | Feature to show tooltip on |
+| `position`| `OverlayPositioning` | `false` | `center-left` |  `bottom-left`, `bottom-center`, `bottom-right`, `center-left`, `center-center`, `center-right`, `top-left`, `top-center`, `top-right`,  | Tooltip position |
+| `id` | `string` | `false` |  |  | HTML ID for the tooltip |
+| `className` | `string` |  | | `ol-tooltip` | Class name for the tooltip |
+| `coordinate` | `Coordinate` |  | | | default coordinate for the tooltip to show |
+
 ### withPixelTransformation
 TBD
 
