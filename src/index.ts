@@ -5,5 +5,6 @@ export { default as Marker } from './components/Marker';
 export { default as Vector } from './components/Vector';
 export { default as ImageLayer } from './components/Image';
 export { default as Polygon } from './components/Polygon';
+export { default as Tooltip } from './components/Tooltip';
 export { default as DrawInteraction } from './interactions/draw';
 export { default as withPixelTransformation } from './custom/withPixelTransformation';

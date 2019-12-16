@@ -11,6 +11,8 @@ import Static from 'ol/source/ImageStatic';
 import Vector from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Fill, Circle, Stroke, Icon } from 'ol/style';
+import Overlay from 'ol/Overlay';
+import OverlayPositioning from 'ol/OverlayPositioning';
 import { Translate, Modify, Draw } from 'ol/interaction';
 import Point from 'ol/geom/Point';
 import { Polygon } from 'ol/geom';
@@ -369,7 +371,7 @@ var MapContext = createContext({});
 function Map(props) {
     var mapEl = useRef(null);
     var olMap = useRef();
-    if (!props.children) {
+    if (!props.children && props.type !== 'osm') {
         throw new Error('Map component should contain at least raster layer');
     }
     /**
@@ -431,6 +433,7 @@ function Map(props) {
         React.createElement("div", { ref: mapEl, style: { width: '100%', height: '100%' } }, props.children)));
 }
 var useMapContext = function () { return useContext(MapContext); };
+//# sourceMappingURL=Map.js.map
 
 /**
  * @description Returns previous value, usually created to be used as a container for prev props
@@ -444,6 +447,7 @@ function usePrevious(value) {
     });
     return previousRef.current;
 }
+//# sourceMappingURL=hooks.js.map
 
 /**
  * @description Create an empty context for the image layer
@@ -539,6 +543,7 @@ function Image(props) {
     }, [MapContextValues.map, previousMapContext]);
     return (React.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) }, props.children));
 }
+//# sourceMappingURL=Image.js.map
 
 var VectorContext = createContext({});
 /**
@@ -609,6 +614,67 @@ var defaultMarkerStyle = new Style({
     })
 });
 var DEFAULT_COLOR = 'rgba(35, 187, 245, 1)';
+//# sourceMappingURL=styles.js.map
+
+/**
+ * @description Generates the tooltip options @see OverlayOptions
+ * @param {ITooltipProps} props
+ * @param {HTMLDivElement} element
+ */
+function generateTooltipOptions(props, element) {
+    var options = {};
+    options.element = element;
+    options.offset = [15, 0];
+    options.autoPan = props.autoPan;
+    options.className = props.className ? props.className : '';
+    options.id = props.id ? props.id : '';
+    options.position = props.coordinate;
+    options.positioning = props.position ? props.position : OverlayPositioning.CENTER_LEFT;
+    return options;
+}
+// Init tooltip context
+var TooltipContext = createContext({});
+function Tooltip(props) {
+    var tooltipEl = useRef(null);
+    var tooltip = useRef();
+    var map = useMapContext().map;
+    /**
+     * @description troggle the tooltip
+     * @param {Coordinate} coordinate
+     */
+    function showTooltip(coordinate) {
+        if (tooltip.current) {
+            tooltip.current.setPosition(coordinate);
+        }
+    }
+    /**
+     * @description Toggle the tooltip off
+     */
+    function hideTooltip() {
+        if (tooltip.current) {
+            tooltip.current.setPosition(undefined);
+        }
+    }
+    useEffect(function () {
+        if (tooltipEl.current && map) {
+            tooltipEl.current.innerHTML = props.title;
+            tooltip.current = new Overlay(generateTooltipOptions(props, tooltipEl.current));
+            map.addOverlay(tooltip.current);
+        }
+    }, [map]);
+    useEffect(function () {
+        if (tooltip.current) {
+            var tooltipEl_1 = tooltip.current.getElement();
+            if (tooltipEl_1) {
+                tooltipEl_1.innerHTML = props.title;
+            }
+        }
+    }, [props.title]);
+    return (React.createElement(TooltipContext.Provider, { value: { tooltip: tooltip, showTooltip: showTooltip, hideTooltip: hideTooltip } },
+        React.createElement("div", { ref: tooltipEl }, props.children)));
+}
+var useToolTip = function () { return useContext(TooltipContext); };
+//# sourceMappingURL=Tooltip.js.map
 
 /**
  * @description Generate marker styles from component props
@@ -632,11 +698,33 @@ function getMarkerStyles(props) {
 function Marker(props) {
     var marker = useRef(null);
     var VectorContext = useVectorContext();
+    var TooltipContext = useToolTip();
     var previousVectorContext = usePrevious(VectorContext);
+    /**
+     * @description drag event handler
+     * @param {ITranslateEvent} event
+     */
     function handleDragEnd(event) {
         // check if callback is passed through props and call it with new and old
         // coordinates
         props.onDragEnd && props.onDragEnd(event.coordinate, event.startCoordinate);
+    }
+    /**
+     * @description Creates the tooltip for current marker
+     * @param {MapBrowserEvent} event
+     */
+    function createTooltip(event) {
+        var map = VectorContext.map;
+        // always hide the tooltip on `pointermove` event
+        TooltipContext.hideTooltip();
+        // loop throught features and show tooltip for detected feature
+        map.forEachFeatureAtPixel(event.pixel, function (feature) {
+            // @ts-ignore
+            if (feature.ol_uid === marker.current.ol_uid) {
+                // @ts-ignore
+                TooltipContext.showTooltip(marker.current.getGeometry().getCoordinates());
+            }
+        });
     }
     /**
      * component did mount
@@ -672,6 +760,7 @@ function Marker(props) {
      * source
      */
     useEffect(function () {
+        var map = VectorContext.map;
         // check if there is no vector layer throw an error
         if (VectorContext && !VectorContext.vector && previousVectorContext) {
             throw new Error('Vector layer is not found, Marker maybe defined without vector layer component');
@@ -681,6 +770,10 @@ function Marker(props) {
             marker.current.setStyle(getMarkerStyles(props));
             // Add the marker as a feature to vector layer
             VectorContext.vector.getSource().addFeature(marker.current);
+        }
+        // check if marker has tooltip and creates it
+        if (TooltipContext.tooltip && map) {
+            map.on('pointermove', createTooltip);
         }
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
@@ -707,6 +800,7 @@ function Marker(props) {
     }, [props.color, props.icon, props.stroke, props.stroke]);
     return React.createElement(React.Fragment, null);
 }
+//# sourceMappingURL=Marker.js.map
 
 /**
  * @description Generate polygon styles from component props
@@ -799,6 +893,7 @@ function Polygon$1(props) {
     }, [VectorContext.vector, previousVectorContext]);
     return React.createElement(React.Fragment, null);
 }
+//# sourceMappingURL=Polygon.js.map
 
 function DrawInteraction(props) {
     var VectorContext = useVectorContext();
@@ -899,6 +994,7 @@ function DrawInteraction(props) {
     }, [MapContext.map, VectorContext.vector]);
     return React.createElement(React.Fragment, null);
 }
+//# sourceMappingURL=draw.js.map
 
 /**
  * inject component with a trasformation object to help transform from pixel to geometry coordinates
@@ -931,8 +1027,9 @@ function WithPixelTransformation(width, height, controlPoints) {
         }(React.Component));
     };
 }
+//# sourceMappingURL=withPixelTransformation.js.map
 
 //# sourceMappingURL=index.js.map
 
-export { transform, Map, Image, Marker, VectorLayer as Vector, Image as ImageLayer, Polygon$1 as Polygon, DrawInteraction, WithPixelTransformation as withPixelTransformation };
+export { transform, Map, Image, Marker, VectorLayer as Vector, Image as ImageLayer, Polygon$1 as Polygon, Tooltip, DrawInteraction, WithPixelTransformation as withPixelTransformation };
 //# sourceMappingURL=index.es.js.map

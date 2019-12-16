@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Feature, Collection } from 'ol';
+import { Feature, Collection, MapBrowserEvent } from 'ol';
 import { Translate } from 'ol/interaction';
 import Point from 'ol/geom/Point';
 import { useVectorContext } from './Vector';
@@ -8,6 +8,7 @@ import { Options } from 'ol/style/Style';
 import { TranslateEvent } from 'ol/interaction/Translate';
 import { usePrevious } from '../custom/hooks';
 import { DEFAULT_COLOR } from '../custom/styles';
+import { useToolTip } from './Tooltip';
 
 export interface IMarkerProps {
     position: number[];
@@ -51,13 +52,40 @@ function getMarkerStyles(props: IMarkerProps): Style {
 function Marker(props: IMarkerProps): JSX.Element {
     const marker = useRef<Feature | null>(null);
     const VectorContext = useVectorContext();
+    const TooltipContext = useToolTip();
     const previousVectorContext = usePrevious(VectorContext);
 
+    /**
+     * @description drag event handler
+     * @param {ITranslateEvent} event
+     */
     function handleDragEnd(event: ITranslateEvent): void {
         // check if callback is passed through props and call it with new and old
         // coordinates
         props.onDragEnd && props.onDragEnd(event.coordinate, event.startCoordinate);
     }
+
+    /**
+     * @description Creates the tooltip for current marker
+     * @param {MapBrowserEvent} event
+     */
+    function createTooltip(event: MapBrowserEvent): void {
+        const { map } = VectorContext;
+
+        // always hide the tooltip on `pointermove` event
+        TooltipContext.hideTooltip();
+
+        // loop throught features and show tooltip for detected feature
+        map.forEachFeatureAtPixel(event.pixel, function(feature: Feature) {
+            // @ts-ignore
+            if (feature.ol_uid === marker.current.ol_uid) {
+                // @ts-ignore
+                TooltipContext.showTooltip(marker.current.getGeometry().getCoordinates());
+            }
+        })
+
+    }
+
 
     /**
      * component did mount
@@ -95,6 +123,7 @@ function Marker(props: IMarkerProps): JSX.Element {
      * source
      */
     useEffect((): void => {
+        const { map } = VectorContext;
         // check if there is no vector layer throw an error
         if (VectorContext && !VectorContext.vector && previousVectorContext) {
             throw new Error(
@@ -107,6 +136,10 @@ function Marker(props: IMarkerProps): JSX.Element {
 
             // Add the marker as a feature to vector layer
             VectorContext.vector.getSource().addFeature(marker.current);
+        }
+        // check if marker has tooltip and creates it
+        if (TooltipContext.tooltip && map) {
+            map.on('pointermove', createTooltip);
         }
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);

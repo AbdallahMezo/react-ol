@@ -58,7 +58,7 @@ function Map(props: IMapProps): JSX.Element {
     const mapEl = useRef<HTMLDivElement>(null);
     const olMap = useRef<MapType>();
 
-    if (!props.children) {
+    if (!props.children && props.type !== 'osm') {
         throw new Error('Map component should contain at least raster layer');
     }
 
@@ -137,4 +137,5 @@ export default Map;
 export interface IMapContext {
     map: MapType;
 }
+
 export const useMapContext = (): IMapContext => useContext(MapContext);
