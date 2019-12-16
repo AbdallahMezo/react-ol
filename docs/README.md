@@ -1,8 +1,8 @@
 
-# wakecap-ol   ![LOGO](http://localhost:3000/openlayers.png)
+# wakecap-ol
 Functional, composed, extended and react wrapper for OpenLayers
 
-![Version](https://img.shields.io/badge/version-0.0.1-green)  ![Stable](https://img.shields.io/badge/stable-alpha-red)  [![CircleCI](https://circleci.com/bb/wakecapteam/wakecap-ol.svg?style=svg)](https://circleci.com/bb/wakecapteam/wakecap-ol)
+![Version](https://img.shields.io/badge/version-0.0.1-green)  ![enter image description here](https://img.shields.io/badge/Stable-beta-red)  [![CircleCI](https://circleci.com/bb/wakecapteam/wakecap-ol.svg?style=svg)](https://circleci.com/bb/wakecapteam/wakecap-ol)
 
 
 
@@ -123,6 +123,19 @@ Should be wrapped in `Vector` component
 | `onEditEnd` | `function` | `false` | | `function(coordinates)`| Edit end handler if `allowUpdateDrawnFeatures` is enabled |
 
 ### Custom
+### Tooltip
+Wrap open layers features in `Tooltip` to show tooltip component on hovering the feature
+@see `ol/overlay`
+
+|prop|type| required | default value | options | description |
+|--|--|--|--| -- | -- |
+| `element` |`HTMLDivElement`  | `false` | `document.createElement('div')` |  | Tooltip div container |
+| `children` | `Feature` | `true` |  |  | Feature to show tooltip on |
+| `position`| `OverlayPositioning` | `false` | `center-left` |  `bottom-left`, `bottom-center`, `bottom-right`, `center-left`, `center-center`, `center-right`, `top-left`, `top-center`, `top-right`,  | Tooltip position |
+| `id` | `string` | `false` |  |  | HTML ID for the tooltip |
+| `className` | `string` |  | | `ol-tooltip` | Class name for the tooltip |
+| `coordinate` | `Coordinate` |  | | | default coordinate for the tooltip to show |
+
 ### withPixelTransformation
 TBD
 
