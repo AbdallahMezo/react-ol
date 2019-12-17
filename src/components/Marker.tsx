@@ -9,6 +9,7 @@ import { TranslateEvent } from 'ol/interaction/Translate';
 import { usePrevious } from '../custom/hooks';
 import { DEFAULT_COLOR } from '../custom/styles';
 import { useToolTip } from './Tooltip';
+import { usePopup } from './Popup';
 
 export interface IMarkerProps {
     position: number[];
@@ -53,6 +54,7 @@ function Marker(props: IMarkerProps): JSX.Element {
     const marker = useRef<Feature | null>(null);
     const VectorContext = useVectorContext();
     const TooltipContext = useToolTip();
+    const PopupContext = usePopup();
     const previousVectorContext = usePrevious(VectorContext);
 
     /**
@@ -78,14 +80,30 @@ function Marker(props: IMarkerProps): JSX.Element {
         // loop throught features and show tooltip for detected feature
         map.forEachFeatureAtPixel(event.pixel, function(feature: Feature) {
             // @ts-ignore
-            if (feature.ol_uid === marker.current.ol_uid) {
+            if (feature.get('withTooltip') && feature.get('tooltipId') === TooltipContext.id) {
                 // @ts-ignore
                 TooltipContext.showTooltip(marker.current.getGeometry().getCoordinates());
             }
-        })
-
+        });
     }
 
+    /**
+     * @description Creates popup
+     */
+    function createPopup(event: MapBrowserEvent): void {
+        const { map } = VectorContext;
+
+        // always hide the tooltip on `pointermove` event
+        PopupContext.hide();
+
+        // loop throught features and show tooltip for detected feature
+        map.forEachFeatureAtPixel(event.pixel, function(feature: Feature) {
+            if (feature.get('withPopup') && feature.get('popupId') === PopupContext.id) {
+                // @ts-ignore
+                PopupContext.show(marker.current.getGeometry().getCoordinates());
+            }
+        });
+    }
 
     /**
      * component did mount
@@ -139,8 +157,21 @@ function Marker(props: IMarkerProps): JSX.Element {
         }
         // check if marker has tooltip and creates it
         if (TooltipContext.tooltip && map) {
+            if (marker.current) {
+                marker.current.set('withTooltip', true);
+                marker.current.set('tooltipId', TooltipContext.id);
+            }
             map.on('pointermove', createTooltip);
         }
+
+        if (PopupContext.popup && map) {
+            if (marker.current) {
+                marker.current.set('withPopup', true);
+                marker.current.set('popupId', PopupContext.id);
+            }
+            map.on('click', createPopup);
+        }
+
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
 

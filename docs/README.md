@@ -8,7 +8,7 @@ Functional, composed, extended and react wrapper for OpenLayers
 
 ## 🤹 Installation
 `npm install https://mezo@bitbucket.org/wakecapteam/wakecap-ol.git`
-## 📦 Usage
+##  🎯 Usage
 You should have a basic knowledge about [openlayers]([https://openlayers.org/](https://openlayers.org/)) , [basic concepts]([https://openlayers.org/en/latest/doc/tutorials/concepts.html](https://openlayers.org/en/latest/doc/tutorials/concepts.html)) and [how it works]([https://openlayers.org/en/latest/doc/quickstart.html](https://openlayers.org/en/latest/doc/quickstart.html)).
 ### 🚀  Basic Usage that renders just a map canvas using `osm` raster layers.
 ```jsx
@@ -45,8 +45,7 @@ Currently available features are `marker` and `polygon`
 	}
 ```
 Check the docs below for more `props` and available configurations.
-## Options and props
-### Components:
+## 📦 Components:
 ### Map
 Map component `props` and `options`
 
@@ -122,7 +121,6 @@ Should be wrapped in `Vector` component
 | `onDragEnd` | `function` | `false` | | `function(newPosition, oldPosition)`| Drag end handler if `allowUpdateDrawnFeatures` is enabled |
 | `onEditEnd` | `function` | `false` | | `function(coordinates)`| Edit end handler if `allowUpdateDrawnFeatures` is enabled |
 
-### Custom
 ### Tooltip
 Wrap open layers features in `Tooltip` to show tooltip component on hovering the feature
 @see `ol/overlay`
@@ -136,18 +134,29 @@ Wrap open layers features in `Tooltip` to show tooltip component on hovering the
 | `className` | `string` |  | | `ol-tooltip` | Class name for the tooltip |
 | `coordinate` | `Coordinate` |  | | | default coordinate for the tooltip to show |
 
+### Popup
+Wrap open layers features in `Popup` to show tooltip component on click the feature
+@see `ol/overlay`
+
+|prop|type| required | default value | options | description |
+|--|--|--|--| -- | -- |
+| `content` | `string` | `true` |  |  | Content to be shown in popup
+| `children` | `Feature` | `true` |  |  | Feature to show tooltip on |
+| `id` | `string` | `false` |  |  | HTML ID for the tooltip |
+| `className` | `string` |  | | `ol-tooltip` | Class name for the popup |
+
 ### withPixelTransformation
 TBD
 
-## TODO
-#### Components:
+## 📋 TODO
+### Components:
 - Layer
-- Popup
-- Overlay
-#### Interactions:
+- ~~Popup~~
+- ~~Overlay~~
+### Interactions:
 - Drag and drop
 - Modify
 - Translate
 
-## License
+## 📜 License
 This library is created for [WakeCap](https://wakecap.com)
