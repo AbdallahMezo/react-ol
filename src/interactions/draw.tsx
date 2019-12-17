@@ -60,7 +60,6 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
         return options;
     }
 
-    // TODO: update interactions with modify and translate for this kind of needs
     /**
      * @description Add modify and translate interaction to drawn feature
      * @param {Feature} feature
@@ -72,6 +71,7 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
         const translate = new Translate({
             features: featureCollection
         });
+
         translate.on('translateend', function(event: TranslateEvent): void {
             event.stopPropagation();
             // @ts-ignore
@@ -104,9 +104,11 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
      */
     function handleDrawEnd(event: DrawEvent): void {
         event.feature.setStyle(defaultPolygonStyle);
+
         if (props.allowUpdateDrawnFeatures) {
             addInteractionsToDrawnFeature(event.feature);
         }
+
         if (props.onDrawEnd) {
             props.onDrawEnd && props.onDrawEnd(event.feature, event.target);
         }
@@ -119,7 +121,9 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
      */
     function createDrawInteraction(props: IDrawInteractionProps): Draw {
         const drawInteraction = new Draw(getDrawOptions(props));
+
         drawInteraction.on('drawend', handleDrawEnd);
+
         return drawInteraction;
     }
 

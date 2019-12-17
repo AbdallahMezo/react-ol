@@ -4,7 +4,7 @@ import OverlayPositioning from 'ol/OverlayPositioning';
 import { Coordinate } from 'ol/coordinate';
 import { useMapContext } from './Map';
 import { createContext } from '../core/context';
-
+import uuid from 'uuid';
 export interface ITooltipProps {
     title: string;
     children: React.ReactNode;
@@ -40,7 +40,7 @@ const TooltipContext = createContext({});
 function Tooltip(props: ITooltipProps): JSX.Element {
     const tooltipEl = useRef<HTMLDivElement>(null);
     const tooltip = useRef<OverlayType>();
-    const {map} = useMapContext();
+    const { map } = useMapContext();
 
     /**
      * @description troggle the tooltip
@@ -48,7 +48,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
      */
     function showTooltip(coordinate: Coordinate) {
         if (tooltip.current) {
-            tooltip.current.setPosition(coordinate)
+            tooltip.current.setPosition(coordinate);
         }
     }
 
@@ -57,7 +57,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
      */
     function hideTooltip() {
         if (tooltip.current) {
-            tooltip.current.setPosition(undefined)
+            tooltip.current.setPosition(undefined);
         }
     }
 
@@ -79,7 +79,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
     }, [props.title]);
 
     return (
-        <TooltipContext.Provider value={{ tooltip: tooltip, showTooltip, hideTooltip }}>
+        <TooltipContext.Provider value={{ tooltip: tooltip, showTooltip, hideTooltip, id: uuid() }}>
             <div ref={tooltipEl}>{props.children}</div>
         </TooltipContext.Provider>
     );
@@ -89,10 +89,10 @@ export default Tooltip;
 
 export interface IUseTooltip {
     tooltip: {
-        current: OverlayType,
-    },
+        current: OverlayType;
+    };
     showTooltip: (coordinate: Coordinate) => void;
     hideTooltip: () => void;
 }
 
-export const useToolTip = () => useContext(TooltipContext)
+export const useToolTip = () => useContext(TooltipContext);

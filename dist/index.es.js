@@ -13,6 +13,7 @@ import VectorSource from 'ol/source/Vector';
 import { Style, Fill, Circle, Stroke, Icon } from 'ol/style';
 import Overlay from 'ol/Overlay';
 import OverlayPositioning from 'ol/OverlayPositioning';
+import uuid from 'uuid';
 import { Translate, Modify, Draw } from 'ol/interaction';
 import Point from 'ol/geom/Point';
 import { Polygon } from 'ol/geom';
@@ -589,6 +590,7 @@ function VectorLayer(props) {
     return (React.createElement(VectorContext.Provider, { value: __assign({}, MapContextValues, { vector: vector.current }) }, props.children));
 }
 var useVectorContext = function () { return useContext(VectorContext); };
+//# sourceMappingURL=Vector.js.map
 
 /**
  * @description Default Polygon style
@@ -670,11 +672,54 @@ function Tooltip(props) {
             }
         }
     }, [props.title]);
-    return (React.createElement(TooltipContext.Provider, { value: { tooltip: tooltip, showTooltip: showTooltip, hideTooltip: hideTooltip } },
+    return (React.createElement(TooltipContext.Provider, { value: { tooltip: tooltip, showTooltip: showTooltip, hideTooltip: hideTooltip, id: uuid() } },
         React.createElement("div", { ref: tooltipEl }, props.children)));
 }
 var useToolTip = function () { return useContext(TooltipContext); };
 //# sourceMappingURL=Tooltip.js.map
+
+/**
+ * @description Generates options for the overlaly
+ * @param {IPopupProps} props
+ * @param {HTMLDivElement} element
+ */
+function generatePopupOptions(props, element) {
+    var options = {};
+    options.className = props.className;
+    options.id = props.id;
+    options.autoPan = props.autoPan;
+    options.element = element;
+    options.position = undefined;
+    return options;
+}
+var PopupContext = createContext({});
+function Popup(props) {
+    var popup = useRef();
+    var popupEl = useRef(null);
+    var map = useMapContext().map;
+    function closePopup() {
+        if (popup.current) {
+            popup.current.setPosition(undefined);
+        }
+    }
+    function triggerPopup(coordinate) {
+        if (popup.current) {
+            popup.current.setPosition(coordinate);
+        }
+    }
+    useEffect(function () {
+        if (popupEl.current && map) {
+            popup.current = new Overlay(generatePopupOptions(props, popupEl.current));
+            map.addOverlay(popup.current);
+        }
+    }, [map]);
+    return (React.createElement(PopupContext.Provider, { value: { popup: popup, show: triggerPopup, hide: closePopup, id: uuid() } },
+        React.createElement("div", { ref: popupEl, className: "ol-popup" },
+            React.createElement("span", { className: "ol-popup-closer", onClick: closePopup }),
+            React.createElement("div", { className: "pop-content" }, props.content),
+            props.children)));
+}
+var usePopup = function () { return useContext(PopupContext); };
 
 /**
  * @description Generate marker styles from component props
@@ -699,6 +744,7 @@ function Marker(props) {
     var marker = useRef(null);
     var VectorContext = useVectorContext();
     var TooltipContext = useToolTip();
+    var PopupContext = usePopup();
     var previousVectorContext = usePrevious(VectorContext);
     /**
      * @description drag event handler
@@ -720,9 +766,24 @@ function Marker(props) {
         // loop throught features and show tooltip for detected feature
         map.forEachFeatureAtPixel(event.pixel, function (feature) {
             // @ts-ignore
-            if (feature.ol_uid === marker.current.ol_uid) {
+            if (feature.get('withTooltip') && feature.get('tooltipId') === TooltipContext.id) {
                 // @ts-ignore
                 TooltipContext.showTooltip(marker.current.getGeometry().getCoordinates());
+            }
+        });
+    }
+    /**
+     * @description Creates popup
+     */
+    function createPopup(event) {
+        var map = VectorContext.map;
+        // always hide the tooltip on `pointermove` event
+        PopupContext.hide();
+        // loop throught features and show tooltip for detected feature
+        map.forEachFeatureAtPixel(event.pixel, function (feature) {
+            if (feature.get('withPopup') && feature.get('popupId') === PopupContext.id) {
+                // @ts-ignore
+                PopupContext.show(marker.current.getGeometry().getCoordinates());
             }
         });
     }
@@ -773,7 +834,18 @@ function Marker(props) {
         }
         // check if marker has tooltip and creates it
         if (TooltipContext.tooltip && map) {
+            if (marker.current) {
+                marker.current.set('withTooltip', true);
+                marker.current.set('tooltipId', TooltipContext.id);
+            }
             map.on('pointermove', createTooltip);
+        }
+        if (PopupContext.popup && map) {
+            if (marker.current) {
+                marker.current.set('withPopup', true);
+                marker.current.set('popupId', PopupContext.id);
+            }
+            map.on('click', createPopup);
         }
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
@@ -926,7 +998,6 @@ function DrawInteraction(props) {
         options.source = getSourceFromProps(props);
         return options;
     }
-    // TODO: update interactions with modify and translate for this kind of needs
     /**
      * @description Add modify and translate interaction to drawn feature
      * @param {Feature} feature
@@ -1031,5 +1102,5 @@ function WithPixelTransformation(width, height, controlPoints) {
 
 //# sourceMappingURL=index.js.map
 
-export { transform, Map, Image, Marker, VectorLayer as Vector, Image as ImageLayer, Polygon$1 as Polygon, Tooltip, DrawInteraction, WithPixelTransformation as withPixelTransformation };
+export { transform, Map, Image, Marker, VectorLayer as Vector, Image as ImageLayer, Polygon$1 as Polygon, Tooltip, Popup, DrawInteraction, WithPixelTransformation as withPixelTransformation };
 //# sourceMappingURL=index.es.js.map

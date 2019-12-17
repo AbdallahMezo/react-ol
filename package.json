@@ -40,6 +40,7 @@
         "@types/rollup-plugin-postcss": "^2.0.0",
         "@types/rollup-plugin-url": "^2.2.0",
         "@types/svgr__rollup": "^4.3.0",
+        "@types/uuid": "^3.4.6",
         "babel-core": "^6.26.3",
         "babel-runtime": "^6.26.0",
         "react-scripts-ts": "^2.16.0",
@@ -58,6 +59,7 @@
         "dist"
     ],
     "dependencies": {
-        "ol": "^6.1.1"
+        "ol": "^6.1.1",
+        "uuid": "^3.3.3"
     }
 }
