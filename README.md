@@ -141,8 +141,8 @@ Wrap open layers features in `Popup` to show tooltip component on click the feat
 |prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
 | `content` | `string` | `true` |  |  | Content to be shown in popup
-| `children` | `Feature` | `true` |  |  | Feature to show tooltip on |
-| `id` | `string` | `false` |  |  | HTML ID for the tooltip |
+| `children` | `Feature` | `true` |  |  | Feature to show popup on |
+| `id` | `string` | `false` |  |  | HTML ID for the popup |
 | `className` | `string` |  | | `ol-tooltip` | Class name for the popup |
 
 ### withPixelTransformation
