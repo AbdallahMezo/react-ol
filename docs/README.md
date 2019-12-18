@@ -138,12 +138,16 @@ Wrap open layers features in `Tooltip` to show tooltip component on hovering the
 Wrap open layers features in `Popup` to show tooltip component on click the feature
 @see `ol/overlay`
 
+> Popup should have `content` or `withComponent` prop to render
+
 |prop|type| required | default value | options | description |
 |--|--|--|--| -- | -- |
-| `content` | `string` | `true` |  |  | Content to be shown in popup
+| `content` | `string` | `false` |  |  | Content to be shown in popup
+| `withComponent` | `(closePopup) => React.ReactComponent` | `false` | | `function(closePopup)` | Class name for the popup |
 | `children` | `Feature` | `true` |  |  | Feature to show popup on |
 | `id` | `string` | `false` |  |  | HTML ID for the popup |
-| `className` | `string` |  | | `ol-tooltip` | Class name for the popup |
+| `className` | `string` |  | |  | Class name for the popup |
+
 
 ### withPixelTransformation
 TBD
