@@ -3,10 +3,12 @@ import { default as OverlayType } from 'ol/Overlay';
 import { Coordinate } from 'ol/coordinate';
 export interface IPopupProps {
     children: React.ReactChild;
-    content: string;
+    content?: string;
     className?: string;
     id?: string;
     autoPan?: boolean;
+    /** render function to render custom component in the popup */
+    withComponent?: (closePopup: () => void) => React.ReactElement;
 }
 declare function Popup(props: IPopupProps): JSX.Element;
 export default Popup;
