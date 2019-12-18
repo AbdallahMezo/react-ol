@@ -701,6 +701,7 @@ function generatePopupOptions(props, element) {
 }
 var PopupContext = createContext({});
 function Popup(props) {
+    var withComponent = props.withComponent;
     var popup = React.useRef();
     var popupEl = React.useRef(null);
     var map = useMapContext().map;
@@ -715,6 +716,10 @@ function Popup(props) {
         }
     }
     React.useEffect(function () {
+        //  throw error if popup dont have content or component
+        if (!props.withComponent && !props.content) {
+            throw Error('Popup cannot be empty, it should have content as string or withComponent render function to render custom popup');
+        }
         if (popupEl.current && map) {
             popup.current = new Overlay(generatePopupOptions(props, popupEl.current));
             map.addOverlay(popup.current);
@@ -722,8 +727,9 @@ function Popup(props) {
     }, [map]);
     return (React__default.createElement(PopupContext.Provider, { value: { popup: popup, show: triggerPopup, hide: closePopup, id: uuid() } },
         React__default.createElement("div", { ref: popupEl, className: "ol-popup" },
-            React__default.createElement("span", { className: "ol-popup-closer", onClick: closePopup }),
-            React__default.createElement("div", { className: "pop-content" }, props.content),
+            withComponent ? (withComponent(closePopup)) : (React__default.createElement(React__default.Fragment, null,
+                React__default.createElement("span", { className: "ol-popup-closer", onClick: closePopup }),
+                React__default.createElement("div", { className: "pop-content" }, props.content))),
             props.children)));
 }
 var usePopup = function () { return React.useContext(PopupContext); };
