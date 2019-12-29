@@ -7,8 +7,9 @@ export interface IPopupProps {
     className?: string;
     id?: string;
     autoPan?: boolean;
+    defaultPosition?: Coordinate | undefined;
     /** render function to render custom component in the popup */
-    withComponent?: (closePopup: () => void) => React.ReactElement;
+    withComponent?: (closePopup: () => void, openPopup: (coordinate: Coordinate | undefined) => void) => React.ReactElement;
 }
 declare function Popup(props: IPopupProps): JSX.Element;
 export default Popup;

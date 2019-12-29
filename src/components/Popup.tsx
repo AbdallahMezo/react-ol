@@ -11,8 +11,12 @@ export interface IPopupProps {
     className?: string;
     id?: string;
     autoPan?: boolean;
+    defaultPosition?: Coordinate | undefined;
     /** render function to render custom component in the popup */
-    withComponent?: (closePopup: () => void) => React.ReactElement;
+    withComponent?: (
+        closePopup: () => void,
+        openPopup: (coordinate: Coordinate | undefined) => void
+    ) => React.ReactElement;
 }
 /**
  * @description Generates options for the overlaly
@@ -41,13 +45,15 @@ function Popup(props: IPopupProps): JSX.Element {
     const { map } = useMapContext();
 
     function closePopup() {
-        if (popup.current) {
+        if (popup.current && popupEl.current) {
+            popupEl.current.setAttribute('style', 'display:none ');
             popup.current.setPosition(undefined);
         }
     }
 
-    function triggerPopup(coordinate: Coordinate | undefined): void {
-        if (popup.current) {
+    function openPopup(coordinate: Coordinate | undefined): void {
+        if (popup.current && popupEl.current) {
+            popupEl.current.setAttribute('style', 'dispaly:block ');
             popup.current.setPosition(coordinate);
         }
     }
@@ -60,27 +66,32 @@ function Popup(props: IPopupProps): JSX.Element {
             );
         }
         if (popupEl.current && map) {
+            popupEl.current.setAttribute('style', 'display:none');
             popup.current = new Overlay(generatePopupOptions(props, popupEl.current));
             map.addOverlay(popup.current);
+            if (props.defaultPosition) {
+                openPopup(props.defaultPosition);
+            }
         }
     }, [map]);
 
     return (
-        <PopupContext.Provider
-            value={{ popup: popup, show: triggerPopup, hide: closePopup, id: uuid() }}
-        >
-            <div ref={popupEl} className="ol-popup">
-                {withComponent ? (
-                    withComponent(closePopup)
-                ) : (
-                    <>
-                        <span className="ol-popup-closer" onClick={closePopup}></span>
-                        <div className="pop-content">{props.content}</div>
-                    </>
-                )}
+        <div ref={popupEl} className="ol-popup" style={{ display: 'none' }}>
+            {withComponent ? (
+                withComponent(closePopup, openPopup)
+            ) : (
+                <>
+                    <span className="ol-popup-closer" onClick={closePopup}></span>
+                    <div className="pop-content">{props.content}</div>
+                </>
+            )}
+
+            <PopupContext.Provider
+                value={{ popup: popup, show: openPopup, hide: closePopup, id: uuid() }}
+            >
                 {props.children}
-            </div>
-        </PopupContext.Provider>
+            </PopupContext.Provider>
+        </div>
     );
 }
 

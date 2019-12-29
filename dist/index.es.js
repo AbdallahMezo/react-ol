@@ -11,6 +11,7 @@ import Static from 'ol/source/ImageStatic';
 import Vector from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Fill, Circle, Stroke, Icon } from 'ol/style';
+import WebGLPointsLayer from 'ol/layer/WebGLPoints';
 import Overlay from 'ol/Overlay';
 import OverlayPositioning from 'ol/OverlayPositioning';
 import uuid from 'uuid';
@@ -341,6 +342,20 @@ var __assign = function() {
 var createContext = function (props) { return React.createContext(props); };
 //# sourceMappingURL=context.js.map
 
+/**
+ * @description Returns previous value, usually created to be used as a container for prev props
+ * @param {T} value to be chached
+ * @returns {?T}
+ */
+function usePrevious(value) {
+    var previousRef = useRef();
+    useEffect(function () {
+        previousRef.current = value;
+    });
+    return previousRef.current;
+}
+//# sourceMappingURL=hooks.js.map
+
 function getMapLayers(type) {
     if (type === 'osm') {
         return [new TileLayer({ source: new OSM() })];
@@ -372,6 +387,7 @@ var MapContext = createContext({});
 function Map(props) {
     var mapEl = useRef(null);
     var olMap = useRef();
+    var previousProps = usePrevious(props);
     if (!props.children && props.type !== 'osm') {
         throw new Error('Map component should contain at least raster layer');
     }
@@ -389,11 +405,11 @@ function Map(props) {
      * @description Memized callback to update map's center if props changed
      * @param {Array<Number>} center new center of the map
      */
-    var updateCenter = useCallback(function (center) {
+    function updateCenter(center) {
         if (olMap.current) {
             olMap.current.getView().animate({ center: center });
         }
-    }, []);
+    }
     /**
      * @description Memized callback to update map's zoom if props changed
      * @param {Number} zoom new zoom of the map
@@ -426,29 +442,17 @@ function Map(props) {
      * update center when center changes
      */
     useEffect(function () {
-        if (olMap.current && props.center) {
-            updateCenter(props.center);
+        if (previousProps) {
+            if (previousProps.center !== props.center && props.center) {
+                updateCenter(props.center);
+            }
         }
     }, [props.center, updateCenter]);
-    return (React.createElement(MapContext.Provider, { value: __assign({}, props, { map: olMap.current }) },
-        React.createElement("div", { ref: mapEl, style: { width: '100%', height: '100%' } }, props.children)));
+    return (React.createElement("div", { ref: mapEl, style: { width: '100%', height: '100%' } },
+        React.createElement(MapContext.Provider, { value: __assign({}, props, { map: olMap.current }) }, props.children)));
 }
 var useMapContext = function () { return useContext(MapContext); };
 //# sourceMappingURL=Map.js.map
-
-/**
- * @description Returns previous value, usually created to be used as a container for prev props
- * @param {T} value to be chached
- * @returns {?T}
- */
-function usePrevious(value) {
-    var previousRef = useRef();
-    useEffect(function () {
-        previousRef.current = value;
-    });
-    return previousRef.current;
-}
-//# sourceMappingURL=hooks.js.map
 
 /**
  * @description Create an empty context for the image layer
@@ -518,31 +522,62 @@ function Image(props) {
     var image = useRef(null);
     var MapContextValues = useMapContext();
     var previousMapContext = usePrevious(MapContextValues);
+    var previousImageProps = usePrevious(props);
     /**
-     * Initialize the image layer
-     * component did mount
+     * @description generate image layer and add it to map
+     * @param {IImageProps} props
      */
-    useEffect(function () {
+    function addImageToMap(props) {
+        // if there is image currently rendered, remove it to not duplicate the layer
+        // @see https://openlayers.org/en/v6.1.1/doc/errors/#58
+        if (image.current) {
+            MapContextValues.map.removeLayer(image.current);
+        }
+        // Create new Image layer and view
         image.current = new ImageLayer(getImageOptions(props));
-        // eslint-disable-next-line
-    }, []);
+        var imageView = new View(getImageViewOptions(props));
+        // Fit the image to map extent
+        imageView.fit([0, 0, props.width, props.height]);
+        // finally adding the layer and view to the map
+        MapContextValues.map.addLayer(image.current);
+        MapContextValues.map.setView(imageView);
+    }
+    /**
+     * @description Check if image layer should be updated based on props change
+     * @param props
+     * @param prevProps
+     */
+    function shouldComponentUpdate(props, prevProps) {
+        if (prevProps) {
+            return (prevProps.src !== props.src ||
+                prevProps.width !== props.width ||
+                prevProps.height !== props.height);
+        }
+        return true;
+    }
     /**
      * Image had been Initialized and map is now exists so we start
      * to add the image layer to the map instance alongside with changing the map view
      * to a new view with the pixel projection created for the image
      */
     useEffect(function () {
+        /**
+         * Map is initialized but image layer cannot have map context
+         * which means that the component had been called out side map component
+         * `Image` is not `children` to `Map`
+         */
         if (MapContextValues && !MapContextValues.map && previousMapContext) {
             throw new Error('Map is not found, Image Layer maybe defined outsite map component');
         }
-        if (MapContextValues.map && image.current) {
-            var imageView = new View(getImageViewOptions(props));
-            MapContextValues.map.addLayer(image.current);
-            MapContextValues.map.setView(imageView);
+        if (!shouldComponentUpdate(props, previousImageProps)) {
+            return;
         }
-        // eslint-disable-next-line
-    }, [MapContextValues.map, previousMapContext]);
-    return (React.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) }, props.children));
+        if (MapContextValues.map) {
+            addImageToMap(props);
+        }
+    }, [MapContextValues.map, previousMapContext, props]);
+    return (React.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) },
+        React.createElement("div", null, props.children)));
 }
 //# sourceMappingURL=Image.js.map
 
@@ -554,21 +589,34 @@ var VectorContext = createContext({});
  */
 function getVectorOptions(props) {
     var options = {};
-    options.source = props.source || new VectorSource({ wrapX: false });
+    options.source = props.source || new VectorSource({ wrapX: false, useSpatialIndex: false });
     options.style = props.style || new Style({});
-    options.zIndex = 999;
+    options.zIndex = 1;
+    if (props.isWebGl && props.webGlStyle) {
+        // @ts-ignore
+        options.style = props.webGlStyle;
+    }
     return options;
 }
 function VectorLayer(props) {
     var MapContextValues = useMapContext();
     var vector = useRef(null);
     var previousMapContext = usePrevious(MapContextValues);
+    function createVectorLayer() {
+        if (props.isWebGl) {
+            vector.current = new WebGLPointsLayer(getVectorOptions(props));
+            return;
+        }
+        else {
+            vector.current = new Vector(getVectorOptions(props));
+        }
+    }
     /**
      * component did mount
      * @description Initialize vector layer
      */
     useEffect(function () {
-        vector.current = new Vector(getVectorOptions(props));
+        createVectorLayer();
         // eslint-disable-next-line
     }, []);
     /**
@@ -579,6 +627,9 @@ function VectorLayer(props) {
         if (MapContextValues && !MapContextValues.map && previousMapContext) {
             throw new Error('Map is not found, Layer maybe defined outsite map component');
         }
+        if (MapContextValues.map && previousMapContext && previousMapContext.map) {
+            return;
+        }
         if (MapContextValues.map && vector.current) {
             MapContextValues.map.addLayer(vector.current);
         }
@@ -587,7 +638,8 @@ function VectorLayer(props) {
     /**
      * @description return a provider to create vector context with this vector layer
      */
-    return (React.createElement(VectorContext.Provider, { value: __assign({}, MapContextValues, { vector: vector.current }) }, props.children));
+    return (React.createElement("div", null,
+        React.createElement(VectorContext.Provider, { value: __assign({}, MapContextValues, { vector: vector.current }) }, props.children)));
 }
 var useVectorContext = function () { return useContext(VectorContext); };
 //# sourceMappingURL=Vector.js.map
@@ -616,6 +668,13 @@ var defaultMarkerStyle = new Style({
     })
 });
 var DEFAULT_COLOR = 'rgba(35, 187, 245, 1)';
+function convertHexToRGBA(hex, opacity) {
+    hex = hex.replace('#', '');
+    var r = parseInt(hex.substring(0, 2), 16);
+    var g = parseInt(hex.substring(2, 4), 16);
+    var b = parseInt(hex.substring(4, 6), 16);
+    return "rgba(" + r + "," + g + "," + b + ", " + opacity + ")";
+}
 //# sourceMappingURL=styles.js.map
 
 /**
@@ -645,7 +704,7 @@ function Tooltip(props) {
      * @param {Coordinate} coordinate
      */
     function showTooltip(coordinate) {
-        if (tooltip.current) {
+        if (tooltip.current && tooltipEl.current) {
             tooltip.current.setPosition(coordinate);
         }
     }
@@ -672,8 +731,8 @@ function Tooltip(props) {
             }
         }
     }, [props.title]);
-    return (React.createElement(TooltipContext.Provider, { value: { tooltip: tooltip, showTooltip: showTooltip, hideTooltip: hideTooltip, id: uuid() } },
-        React.createElement("div", { ref: tooltipEl }, props.children)));
+    return (React.createElement("div", { ref: tooltipEl },
+        React.createElement(TooltipContext.Provider, { value: { tooltip: tooltip, show: showTooltip, hide: hideTooltip, id: uuid() } }, props.children)));
 }
 var useToolTip = function () { return useContext(TooltipContext); };
 //# sourceMappingURL=Tooltip.js.map
@@ -699,12 +758,14 @@ function Popup(props) {
     var popupEl = useRef(null);
     var map = useMapContext().map;
     function closePopup() {
-        if (popup.current) {
+        if (popup.current && popupEl.current) {
+            popupEl.current.setAttribute('style', 'display:none ');
             popup.current.setPosition(undefined);
         }
     }
-    function triggerPopup(coordinate) {
-        if (popup.current) {
+    function openPopup(coordinate) {
+        if (popup.current && popupEl.current) {
+            popupEl.current.setAttribute('style', 'dispaly:block ');
             popup.current.setPosition(coordinate);
         }
     }
@@ -714,18 +775,469 @@ function Popup(props) {
             throw Error('Popup cannot be empty, it should have content as string or withComponent render function to render custom popup');
         }
         if (popupEl.current && map) {
+            popupEl.current.setAttribute('style', 'display:none');
             popup.current = new Overlay(generatePopupOptions(props, popupEl.current));
             map.addOverlay(popup.current);
+            if (props.defaultPosition) {
+                openPopup(props.defaultPosition);
+            }
         }
     }, [map]);
-    return (React.createElement(PopupContext.Provider, { value: { popup: popup, show: triggerPopup, hide: closePopup, id: uuid() } },
-        React.createElement("div", { ref: popupEl, className: "ol-popup" },
-            withComponent ? (withComponent(closePopup)) : (React.createElement(React.Fragment, null,
-                React.createElement("span", { className: "ol-popup-closer", onClick: closePopup }),
-                React.createElement("div", { className: "pop-content" }, props.content))),
-            props.children)));
+    return (React.createElement("div", { ref: popupEl, className: "ol-popup", style: { display: 'none' } },
+        withComponent ? (withComponent(closePopup, openPopup)) : (React.createElement(React.Fragment, null,
+            React.createElement("span", { className: "ol-popup-closer", onClick: closePopup }),
+            React.createElement("div", { className: "pop-content" }, props.content))),
+        React.createElement(PopupContext.Provider, { value: { popup: popup, show: openPopup, hide: closePopup, id: uuid() } }, props.children)));
 }
 var usePopup = function () { return useContext(PopupContext); };
+//# sourceMappingURL=Popup.js.map
+
+function isEqual(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+//# sourceMappingURL=utils.js.map
+
+var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+/**
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+
+/** Used as the `TypeError` message for "Functions" methods. */
+var FUNC_ERROR_TEXT = 'Expected a function';
+
+/** Used as references for various `Number` constants. */
+var NAN = 0 / 0;
+
+/** `Object#toString` result references. */
+var symbolTag = '[object Symbol]';
+
+/** Used to match leading and trailing whitespace. */
+var reTrim = /^\s+|\s+$/g;
+
+/** Used to detect bad signed hexadecimal string values. */
+var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+/** Used to detect binary string values. */
+var reIsBinary = /^0b[01]+$/i;
+
+/** Used to detect octal string values. */
+var reIsOctal = /^0o[0-7]+$/i;
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseInt = parseInt;
+
+/** Detect free variable `global` from Node.js. */
+var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
+
+/** Detect free variable `self`. */
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = freeGlobal || freeSelf || Function('return this')();
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString = objectProto.toString;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeMax = Math.max,
+    nativeMin = Math.min;
+
+/**
+ * Gets the timestamp of the number of milliseconds that have elapsed since
+ * the Unix epoch (1 January 1970 00:00:00 UTC).
+ *
+ * @static
+ * @memberOf _
+ * @since 2.4.0
+ * @category Date
+ * @returns {number} Returns the timestamp.
+ * @example
+ *
+ * _.defer(function(stamp) {
+ *   console.log(_.now() - stamp);
+ * }, _.now());
+ * // => Logs the number of milliseconds it took for the deferred invocation.
+ */
+var now = function() {
+  return root.Date.now();
+};
+
+/**
+ * Creates a debounced function that delays invoking `func` until after `wait`
+ * milliseconds have elapsed since the last time the debounced function was
+ * invoked. The debounced function comes with a `cancel` method to cancel
+ * delayed `func` invocations and a `flush` method to immediately invoke them.
+ * Provide `options` to indicate whether `func` should be invoked on the
+ * leading and/or trailing edge of the `wait` timeout. The `func` is invoked
+ * with the last arguments provided to the debounced function. Subsequent
+ * calls to the debounced function return the result of the last `func`
+ * invocation.
+ *
+ * **Note:** If `leading` and `trailing` options are `true`, `func` is
+ * invoked on the trailing edge of the timeout only if the debounced function
+ * is invoked more than once during the `wait` timeout.
+ *
+ * If `wait` is `0` and `leading` is `false`, `func` invocation is deferred
+ * until to the next tick, similar to `setTimeout` with a timeout of `0`.
+ *
+ * See [David Corbacho's article](https://css-tricks.com/debouncing-throttling-explained-examples/)
+ * for details over the differences between `_.debounce` and `_.throttle`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Function
+ * @param {Function} func The function to debounce.
+ * @param {number} [wait=0] The number of milliseconds to delay.
+ * @param {Object} [options={}] The options object.
+ * @param {boolean} [options.leading=false]
+ *  Specify invoking on the leading edge of the timeout.
+ * @param {number} [options.maxWait]
+ *  The maximum time `func` is allowed to be delayed before it's invoked.
+ * @param {boolean} [options.trailing=true]
+ *  Specify invoking on the trailing edge of the timeout.
+ * @returns {Function} Returns the new debounced function.
+ * @example
+ *
+ * // Avoid costly calculations while the window size is in flux.
+ * jQuery(window).on('resize', _.debounce(calculateLayout, 150));
+ *
+ * // Invoke `sendMail` when clicked, debouncing subsequent calls.
+ * jQuery(element).on('click', _.debounce(sendMail, 300, {
+ *   'leading': true,
+ *   'trailing': false
+ * }));
+ *
+ * // Ensure `batchLog` is invoked once after 1 second of debounced calls.
+ * var debounced = _.debounce(batchLog, 250, { 'maxWait': 1000 });
+ * var source = new EventSource('/stream');
+ * jQuery(source).on('message', debounced);
+ *
+ * // Cancel the trailing debounced invocation.
+ * jQuery(window).on('popstate', debounced.cancel);
+ */
+function debounce(func, wait, options) {
+  var lastArgs,
+      lastThis,
+      maxWait,
+      result,
+      timerId,
+      lastCallTime,
+      lastInvokeTime = 0,
+      leading = false,
+      maxing = false,
+      trailing = true;
+
+  if (typeof func != 'function') {
+    throw new TypeError(FUNC_ERROR_TEXT);
+  }
+  wait = toNumber(wait) || 0;
+  if (isObject(options)) {
+    leading = !!options.leading;
+    maxing = 'maxWait' in options;
+    maxWait = maxing ? nativeMax(toNumber(options.maxWait) || 0, wait) : maxWait;
+    trailing = 'trailing' in options ? !!options.trailing : trailing;
+  }
+
+  function invokeFunc(time) {
+    var args = lastArgs,
+        thisArg = lastThis;
+
+    lastArgs = lastThis = undefined;
+    lastInvokeTime = time;
+    result = func.apply(thisArg, args);
+    return result;
+  }
+
+  function leadingEdge(time) {
+    // Reset any `maxWait` timer.
+    lastInvokeTime = time;
+    // Start the timer for the trailing edge.
+    timerId = setTimeout(timerExpired, wait);
+    // Invoke the leading edge.
+    return leading ? invokeFunc(time) : result;
+  }
+
+  function remainingWait(time) {
+    var timeSinceLastCall = time - lastCallTime,
+        timeSinceLastInvoke = time - lastInvokeTime,
+        result = wait - timeSinceLastCall;
+
+    return maxing ? nativeMin(result, maxWait - timeSinceLastInvoke) : result;
+  }
+
+  function shouldInvoke(time) {
+    var timeSinceLastCall = time - lastCallTime,
+        timeSinceLastInvoke = time - lastInvokeTime;
+
+    // Either this is the first call, activity has stopped and we're at the
+    // trailing edge, the system time has gone backwards and we're treating
+    // it as the trailing edge, or we've hit the `maxWait` limit.
+    return (lastCallTime === undefined || (timeSinceLastCall >= wait) ||
+      (timeSinceLastCall < 0) || (maxing && timeSinceLastInvoke >= maxWait));
+  }
+
+  function timerExpired() {
+    var time = now();
+    if (shouldInvoke(time)) {
+      return trailingEdge(time);
+    }
+    // Restart the timer.
+    timerId = setTimeout(timerExpired, remainingWait(time));
+  }
+
+  function trailingEdge(time) {
+    timerId = undefined;
+
+    // Only invoke if we have `lastArgs` which means `func` has been
+    // debounced at least once.
+    if (trailing && lastArgs) {
+      return invokeFunc(time);
+    }
+    lastArgs = lastThis = undefined;
+    return result;
+  }
+
+  function cancel() {
+    if (timerId !== undefined) {
+      clearTimeout(timerId);
+    }
+    lastInvokeTime = 0;
+    lastArgs = lastCallTime = lastThis = timerId = undefined;
+  }
+
+  function flush() {
+    return timerId === undefined ? result : trailingEdge(now());
+  }
+
+  function debounced() {
+    var time = now(),
+        isInvoking = shouldInvoke(time);
+
+    lastArgs = arguments;
+    lastThis = this;
+    lastCallTime = time;
+
+    if (isInvoking) {
+      if (timerId === undefined) {
+        return leadingEdge(lastCallTime);
+      }
+      if (maxing) {
+        // Handle invocations in a tight loop.
+        timerId = setTimeout(timerExpired, wait);
+        return invokeFunc(lastCallTime);
+      }
+    }
+    if (timerId === undefined) {
+      timerId = setTimeout(timerExpired, wait);
+    }
+    return result;
+  }
+  debounced.cancel = cancel;
+  debounced.flush = flush;
+  return debounced;
+}
+
+/**
+ * Creates a throttled function that only invokes `func` at most once per
+ * every `wait` milliseconds. The throttled function comes with a `cancel`
+ * method to cancel delayed `func` invocations and a `flush` method to
+ * immediately invoke them. Provide `options` to indicate whether `func`
+ * should be invoked on the leading and/or trailing edge of the `wait`
+ * timeout. The `func` is invoked with the last arguments provided to the
+ * throttled function. Subsequent calls to the throttled function return the
+ * result of the last `func` invocation.
+ *
+ * **Note:** If `leading` and `trailing` options are `true`, `func` is
+ * invoked on the trailing edge of the timeout only if the throttled function
+ * is invoked more than once during the `wait` timeout.
+ *
+ * If `wait` is `0` and `leading` is `false`, `func` invocation is deferred
+ * until to the next tick, similar to `setTimeout` with a timeout of `0`.
+ *
+ * See [David Corbacho's article](https://css-tricks.com/debouncing-throttling-explained-examples/)
+ * for details over the differences between `_.throttle` and `_.debounce`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Function
+ * @param {Function} func The function to throttle.
+ * @param {number} [wait=0] The number of milliseconds to throttle invocations to.
+ * @param {Object} [options={}] The options object.
+ * @param {boolean} [options.leading=true]
+ *  Specify invoking on the leading edge of the timeout.
+ * @param {boolean} [options.trailing=true]
+ *  Specify invoking on the trailing edge of the timeout.
+ * @returns {Function} Returns the new throttled function.
+ * @example
+ *
+ * // Avoid excessively updating the position while scrolling.
+ * jQuery(window).on('scroll', _.throttle(updatePosition, 100));
+ *
+ * // Invoke `renewToken` when the click event is fired, but not more than once every 5 minutes.
+ * var throttled = _.throttle(renewToken, 300000, { 'trailing': false });
+ * jQuery(element).on('click', throttled);
+ *
+ * // Cancel the trailing throttled invocation.
+ * jQuery(window).on('popstate', throttled.cancel);
+ */
+function throttle(func, wait, options) {
+  var leading = true,
+      trailing = true;
+
+  if (typeof func != 'function') {
+    throw new TypeError(FUNC_ERROR_TEXT);
+  }
+  if (isObject(options)) {
+    leading = 'leading' in options ? !!options.leading : leading;
+    trailing = 'trailing' in options ? !!options.trailing : trailing;
+  }
+  return debounce(func, wait, {
+    'leading': leading,
+    'maxWait': wait,
+    'trailing': trailing
+  });
+}
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return !!value && (type == 'object' || type == 'function');
+}
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return !!value && typeof value == 'object';
+}
+
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike(value) && objectToString.call(value) == symbolTag);
+}
+
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
+function toNumber(value) {
+  if (typeof value == 'number') {
+    return value;
+  }
+  if (isSymbol(value)) {
+    return NAN;
+  }
+  if (isObject(value)) {
+    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    value = isObject(other) ? (other + '') : other;
+  }
+  if (typeof value != 'string') {
+    return value === 0 ? value : +value;
+  }
+  value = value.replace(reTrim, '');
+  var isBinary = reIsBinary.test(value);
+  return (isBinary || reIsOctal.test(value))
+    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+    : (reIsBadHex.test(value) ? NAN : +value);
+}
+
+var lodash_throttle = throttle;
 
 /**
  * @description Generate marker styles from component props
@@ -733,13 +1245,16 @@ var usePopup = function () { return useContext(PopupContext); };
  * @returns {Style} style to be applied to the marker
  */
 function getMarkerStyles(props) {
-    var color = props.color, icon = props.icon, stroke = props.stroke, width = props.width;
+    var color = props.color, icon = props.icon, width = props.width;
     var options = {};
     if (icon) {
         options.image = new Icon({ src: icon });
         return new Style(options);
     }
-    options.stroke = new Stroke({ color: stroke || DEFAULT_COLOR });
+    options.stroke = new Stroke({
+        color: props.stroke || DEFAULT_COLOR,
+        width: props.strokeWidth || 8
+    });
     options.image = new Circle({
         radius: width || 8,
         fill: new Fill({ color: color || DEFAULT_COLOR })
@@ -748,10 +1263,44 @@ function getMarkerStyles(props) {
 }
 function Marker(props) {
     var marker = useRef(null);
+    var previousProps = usePrevious(props);
     var VectorContext = useVectorContext();
     var TooltipContext = useToolTip();
     var PopupContext = usePopup();
     var previousVectorContext = usePrevious(VectorContext);
+    /**
+     * @description Check if marker should be updated based on props
+     * @param props
+     * @param prevProps
+     */
+    function shouldMarkerUpdate(props, prevProps) {
+        if (prevProps) {
+            return isEqual(props.position, prevProps.position);
+        }
+        return true;
+    }
+    /**
+     * @description Generate marker feature and add it to map
+     * @param props
+     */
+    function addMarkerToMap(props) {
+        /**
+         * Removes the current marker if exists to prevent add duplicated features
+         * @see https://openlayers.org/en/v6.1.1/doc/errors/#58
+         */
+        if (marker.current) {
+            VectorContext.vector.getSource().removeFeature(marker.current);
+        }
+        marker.current = new Feature({
+            // set the position of the marker
+            geometry: new Point(props.position)
+        });
+        marker.current.set('color', props.color);
+        // set marker styles
+        marker.current.setStyle(getMarkerStyles(props));
+        // Add the marker as a feature to vector layer
+        VectorContext.vector.getSource().addFeature(marker.current);
+    }
     /**
      * @description drag event handler
      * @param {ITranslateEvent} event
@@ -762,49 +1311,62 @@ function Marker(props) {
         props.onDragEnd && props.onDragEnd(event.coordinate, event.startCoordinate);
     }
     /**
+     * @description Check if marker have a tooltip and shows it
+     * @param {MapBrowserEvent} event
+     */
+    function checkForTooltip(event) {
+        var map = VectorContext.map;
+        map.forEachFeatureAtPixel(event.pixel, function (feature) {
+            if (!feature) {
+                return;
+            }
+            if (feature.get('withTooltip') && feature.get('tooltipId') === TooltipContext.id) {
+                // @ts-ignore
+                TooltipContext.show(feature.getGeometry().getCoordinates());
+                return;
+            }
+            else {
+                return;
+            }
+        });
+    }
+    /**
      * @description Creates the tooltip for current marker
      * @param {MapBrowserEvent} event
      */
     function createTooltip(event) {
-        var map = VectorContext.map;
-        // always hide the tooltip on `pointermove` event
-        TooltipContext.hideTooltip();
-        // loop throught features and show tooltip for detected feature
-        map.forEachFeatureAtPixel(event.pixel, function (feature) {
-            // @ts-ignore
-            if (feature.get('withTooltip') && feature.get('tooltipId') === TooltipContext.id) {
-                // @ts-ignore
-                TooltipContext.showTooltip(marker.current.getGeometry().getCoordinates());
-            }
-        });
+        TooltipContext.hide();
+        if (event.dragging) {
+            return;
+        }
+        var throtteledCheck = lodash_throttle(checkForTooltip, 100, { trailing: true });
+        throtteledCheck(event);
+        return;
     }
     /**
      * @description Creates popup
+     * @param {MapBrowserEvent} event
      */
     function createPopup(event) {
         var map = VectorContext.map;
-        // always hide the tooltip on `pointermove` event
+        // always hide the tooltip on `click` event
         PopupContext.hide();
         // loop throught features and show tooltip for detected feature
         map.forEachFeatureAtPixel(event.pixel, function (feature) {
-            if (feature.get('withPopup') && feature.get('popupId') === PopupContext.id) {
-                // @ts-ignore
-                PopupContext.show(marker.current.getGeometry().getCoordinates());
+            if (feature.get('withPopup')) {
+                if (feature.get('popupId') === PopupContext.id) {
+                    // @ts-ignore
+                    PopupContext.show(marker.current.getGeometry().getCoordinates());
+                }
+                else {
+                    PopupContext.hide();
+                    return;
+                }
+                return;
             }
+            return;
         });
     }
-    /**
-     * component did mount
-     * @description Initialize the marker
-     */
-    useEffect(function () {
-        //  init the marker
-        marker.current = new Feature({
-            // set the position of the marker
-            geometry: new Point(props.position)
-        });
-        // eslint-disable-next-line
-    }, []);
     /**
      * @description Checks if the marker is draggable and mapcontext updated
      * to apply drag interaction to the marker
@@ -829,21 +1391,16 @@ function Marker(props) {
     useEffect(function () {
         var map = VectorContext.map;
         // check if there is no vector layer throw an error
-        if (VectorContext && !VectorContext.vector && previousVectorContext) {
-            throw new Error('Vector layer is not found, Marker maybe defined without vector layer component');
+        if (!shouldMarkerUpdate(props, previousProps)) {
+            return;
         }
-        if (VectorContext.vector && marker.current) {
-            // set marker styles
-            marker.current.setStyle(getMarkerStyles(props));
-            // Add the marker as a feature to vector layer
-            VectorContext.vector.getSource().addFeature(marker.current);
+        if (VectorContext.vector) {
+            addMarkerToMap(props);
         }
         // check if marker has tooltip and creates it
-        if (TooltipContext.tooltip && map) {
-            if (marker.current) {
-                marker.current.set('withTooltip', true);
-                marker.current.set('tooltipId', TooltipContext.id);
-            }
+        if (TooltipContext.tooltip && map && marker.current) {
+            marker.current.set('withTooltip', true);
+            marker.current.set('tooltipId', TooltipContext.id);
             map.on('pointermove', createTooltip);
         }
         if (PopupContext.popup && map) {
@@ -875,10 +1432,9 @@ function Marker(props) {
             marker.current.setStyle(getMarkerStyles(props));
         }
         // eslint-disable-next-line
-    }, [props.color, props.icon, props.stroke, props.stroke]);
-    return React.createElement(React.Fragment, null);
+    }, [props.color, props.icon, props.stroke, props.strokeWidth]);
+    return React.createElement("div", null, " ");
 }
-//# sourceMappingURL=Marker.js.map
 
 /**
  * @description Generate polygon styles from component props
@@ -887,7 +1443,11 @@ function Marker(props) {
  */
 function getPolygonStyles(props) {
     var options = {};
-    options.fill = new Fill({ color: props.color || 'rgba(0, 0, 255, 0.1)' });
+    options.fill = new Fill({
+        color: props.color
+            ? convertHexToRGBA(props.color, props.opacity || 0.3)
+            : 'rgba(0, 0, 255, 0.1)'
+    });
     options.stroke = new Stroke({
         color: props.strokeColor || 'red',
         width: props.strokeWidth || 2
@@ -967,9 +1527,14 @@ function Polygon$1(props) {
             // Add the polygon as a feature to vector layer
             VectorContext.vector.getSource().addFeature(polygon.current);
         }
+        return function () {
+            if (polygon.current && VectorContext.vector) {
+                VectorContext.vector.getSource().removeFeature(polygon.current);
+            }
+        };
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
-    return React.createElement(React.Fragment, null);
+    return React.createElement("div", null);
 }
 //# sourceMappingURL=Polygon.js.map
 

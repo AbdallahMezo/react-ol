@@ -5,12 +5,17 @@ import { useMapContext, IMapContext } from './Map';
 import { createContext } from '../core/context';
 import { Style } from 'ol/style';
 import { usePrevious } from '../custom/hooks';
+import WebGLPointsLayer from 'ol/layer/WebGLPoints';
 
 // eslint-disable-next-line
 export interface IVectorLayerProps {
     source?: VectorSource;
     style?: Style;
     children?: React.ReactNode;
+    isWebGl?: boolean;
+    /** `LiteralStyles`
+     */
+    webGlStyle?: any;
 }
 
 const VectorContext = createContext({});
@@ -23,9 +28,13 @@ const VectorContext = createContext({});
 function getVectorOptions(props: IVectorLayerProps): Options {
     const options: Options = {};
 
-    options.source = props.source || new VectorSource({ wrapX: false });
+    options.source = props.source || new VectorSource({ wrapX: false, useSpatialIndex: false });
     options.style = props.style || new Style({});
-    options.zIndex = 999;
+    options.zIndex = 1;
+    if (props.isWebGl && props.webGlStyle) {
+        // @ts-ignore
+        options.style = props.webGlStyle;
+    }
 
     return options;
 }
@@ -35,12 +44,21 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
     const vector = useRef<Vector | null>(null);
     const previousMapContext = usePrevious(MapContextValues);
 
+    function createVectorLayer(): void {
+        if (props.isWebGl) {
+            vector.current = new WebGLPointsLayer(getVectorOptions(props));
+            return;
+        } else {
+            vector.current = new Vector(getVectorOptions(props));
+        }
+    }
+
     /**
      * component did mount
      * @description Initialize vector layer
      */
     useEffect((): void => {
-        vector.current = new Vector(getVectorOptions(props));
+        createVectorLayer();
         // eslint-disable-next-line
     }, []);
 
@@ -52,6 +70,9 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
         if (MapContextValues && !MapContextValues.map && previousMapContext) {
             throw new Error('Map is not found, Layer maybe defined outsite map component');
         }
+        if (MapContextValues.map && previousMapContext && previousMapContext.map) {
+            return;
+        }
         if (MapContextValues.map && vector.current) {
             MapContextValues.map.addLayer(vector.current);
         }
@@ -62,9 +83,11 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
      * @description return a provider to create vector context with this vector layer
      */
     return (
-        <VectorContext.Provider value={{ ...MapContextValues, vector: vector.current }}>
-            {props.children}
-        </VectorContext.Provider>
+        <div>
+            <VectorContext.Provider value={{ ...MapContextValues, vector: vector.current }}>
+                {props.children}
+            </VectorContext.Provider>
+        </div>
     );
 }
 

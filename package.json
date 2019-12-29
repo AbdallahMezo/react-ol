@@ -28,11 +28,15 @@
     "peerDependencies": {
         "ol": "^6.1.0",
         "react": "^16.0.0",
-        "react-dom": "^16.0.0"
+        "react-dom": "^16.0.0",
+        "lodash": "^4.17.15",
+        "uuid": "^3.3.3"
     },
     "devDependencies": {
+        "@rollup/plugin-typescript": "^2.0.1",
         "@svgr/rollup": "^2.4.1",
         "@types/babel-core": "^6.25.6",
+        "@types/lodash.throttle": "^4.1.6",
         "@types/ol": "^5.3.6",
         "@types/react": "^16.9.16",
         "@types/react-dom": "^16.9.4",
@@ -51,7 +55,7 @@
         "rollup-plugin-peer-deps-external": "^2.2.0",
         "rollup-plugin-postcss": "^1.6.2",
         "rollup-plugin-sass": "^1.2.2",
-        "rollup-plugin-typescript2": "^0.17.0",
+        "rollup-plugin-typescript2": "^0.25.3",
         "rollup-plugin-url": "^1.4.0",
         "typescript": "^2.8.3"
     },
@@ -59,6 +63,7 @@
         "dist"
     ],
     "dependencies": {
+        "lodash.throttle": "^4.1.1",
         "ol": "^6.1.1",
         "uuid": "^3.3.3"
     }
