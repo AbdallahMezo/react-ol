@@ -16,6 +16,7 @@ export interface IMapProps {
     center?: number[];
     target?: HTMLDivElement;
     type?: 'osm' | 'image';
+    containerStyle?: React.CSSProperties;
 }
 
 function getMapLayers(type: IMapProps['type']): MapOptions['layers'] {
@@ -128,7 +129,7 @@ function Map(props: IMapProps): JSX.Element {
     }, [props.center, updateCenter]);
 
     return (
-        <div ref={mapEl} style={{ width: '100%', height: '100%' }}>
+        <div ref={mapEl} style={{ width: '100%', height: '100%', ...props.containerStyle }}>
             <MapContext.Provider value={{ ...props, map: olMap.current }}>
                 {props.children}
             </MapContext.Provider>

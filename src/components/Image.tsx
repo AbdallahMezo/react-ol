@@ -130,6 +130,9 @@ function Image(props: IImageProps): JSX.Element {
         props: IImageProps,
         prevProps: IImageProps | undefined
     ): boolean {
+        if (!image || !image.current) {
+            return true;
+        }
         if (prevProps) {
             return (
                 prevProps.src !== props.src ||

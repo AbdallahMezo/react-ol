@@ -448,7 +448,7 @@ function Map(props) {
             }
         }
     }, [props.center, updateCenter]);
-    return (React.createElement("div", { ref: mapEl, style: { width: '100%', height: '100%' } },
+    return (React.createElement("div", { ref: mapEl, style: __assign({ width: '100%', height: '100%' }, props.containerStyle) },
         React.createElement(MapContext.Provider, { value: __assign({}, props, { map: olMap.current }) }, props.children)));
 }
 var useMapContext = function () { return useContext(MapContext); };
@@ -548,6 +548,9 @@ function Image(props) {
      * @param prevProps
      */
     function shouldComponentUpdate(props, prevProps) {
+        if (!image || !image.current) {
+            return true;
+        }
         if (prevProps) {
             return (prevProps.src !== props.src ||
                 prevProps.width !== props.width ||
@@ -579,7 +582,6 @@ function Image(props) {
     return (React.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) },
         React.createElement("div", null, props.children)));
 }
-//# sourceMappingURL=Image.js.map
 
 var VectorContext = createContext({});
 /**
@@ -1284,13 +1286,6 @@ function Marker(props) {
      * @param props
      */
     function addMarkerToMap(props) {
-        /**
-         * Removes the current marker if exists to prevent add duplicated features
-         * @see https://openlayers.org/en/v6.1.1/doc/errors/#58
-         */
-        if (marker.current) {
-            VectorContext.vector.getSource().removeFeature(marker.current);
-        }
         marker.current = new Feature({
             // set the position of the marker
             geometry: new Point(props.position)
@@ -1368,6 +1363,18 @@ function Marker(props) {
         });
     }
     /**
+     * Removes the current marker if exists to prevent add duplicated features
+     * @see https://openlayers.org/en/v6.1.1/doc/errors/#58
+     */
+    function useEffectCleanup() {
+        if (VectorContext.vector && marker.current) {
+            var source = VectorContext.vector.getSource();
+            if (source) {
+                source.removeFeature(marker.current);
+            }
+        }
+    }
+    /**
      * @description Checks if the marker is draggable and mapcontext updated
      * to apply drag interaction to the marker
      */
@@ -1410,6 +1417,7 @@ function Marker(props) {
             }
             map.on('click', createPopup);
         }
+        return useEffectCleanup;
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
     /**
@@ -1435,6 +1443,7 @@ function Marker(props) {
     }, [props.color, props.icon, props.stroke, props.strokeWidth]);
     return React.createElement("div", null, " ");
 }
+//# sourceMappingURL=Marker.js.map
 
 /**
  * @description Generate polygon styles from component props

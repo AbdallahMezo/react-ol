@@ -82,13 +82,6 @@ function Marker(props: IMarkerProps): JSX.Element {
      * @param props
      */
     function addMarkerToMap(props: IMarkerProps): void {
-        /**
-         * Removes the current marker if exists to prevent add duplicated features
-         * @see https://openlayers.org/en/v6.1.1/doc/errors/#58
-         */
-        if (marker.current) {
-            VectorContext.vector.getSource().removeFeature(marker.current);
-        }
         marker.current = new Feature({
             // set the position of the marker
             geometry: new Point(props.position)
@@ -177,6 +170,19 @@ function Marker(props: IMarkerProps): JSX.Element {
     }
 
     /**
+     * Removes the current marker if exists to prevent add duplicated features
+     * @see https://openlayers.org/en/v6.1.1/doc/errors/#58
+     */
+    function useEffectCleanup() {
+        if (VectorContext.vector && marker.current) {
+            const source = VectorContext.vector.getSource();
+            if (source) {
+                source.removeFeature(marker.current);
+            }
+        }
+    }
+
+    /**
      * @description Checks if the marker is draggable and mapcontext updated
      * to apply drag interaction to the marker
      */
@@ -198,7 +204,7 @@ function Marker(props: IMarkerProps): JSX.Element {
      * @description update the parent vector context if exists and add feature to its
      * source
      */
-    useEffect((): void => {
+    useEffect((): (() => void) | void => {
         const { map } = VectorContext;
         // check if there is no vector layer throw an error
 
@@ -224,6 +230,8 @@ function Marker(props: IMarkerProps): JSX.Element {
             }
             map.on('click', createPopup);
         }
+
+        return useEffectCleanup;
 
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
