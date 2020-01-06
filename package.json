@@ -1,6 +1,6 @@
 {
     "name": "wakecap-ol",
-    "version": "0.0.1",
+    "version": "0.0.1-alpha",
     "description": "Functional, composed, extended and react wrapper for OpenLayers",
     "main": "dist/index.js",
     "module": "dist/index.es.js",
