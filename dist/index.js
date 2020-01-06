@@ -589,6 +589,7 @@ function Image(props) {
     return (React__default.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) },
         React__default.createElement("div", null, props.children)));
 }
+//# sourceMappingURL=Image.js.map
 
 var VectorContext = createContext({});
 /**
@@ -725,12 +726,18 @@ function Tooltip(props) {
             tooltip.current.setPosition(undefined);
         }
     }
+    function useEffectCleanup() {
+        if (map && tooltip.current) {
+            map.removeOverlay(tooltip.current);
+        }
+    }
     React.useEffect(function () {
         if (tooltipEl.current && map) {
             tooltipEl.current.innerHTML = props.title;
             tooltip.current = new Overlay(generateTooltipOptions(props, tooltipEl.current));
             map.addOverlay(tooltip.current);
         }
+        return useEffectCleanup;
     }, [map]);
     React.useEffect(function () {
         if (tooltip.current) {
@@ -778,6 +785,11 @@ function Popup(props) {
             popup.current.setPosition(coordinate);
         }
     }
+    function useEffectCleanup() {
+        if (map && popup.current) {
+            map.removeOverlay(popup.current);
+        }
+    }
     React.useEffect(function () {
         //  throw error if popup dont have content or component
         if (!props.withComponent && !props.content) {
@@ -791,6 +803,7 @@ function Popup(props) {
                 openPopup(props.defaultPosition);
             }
         }
+        return useEffectCleanup;
     }, [map]);
     return (React__default.createElement("div", { ref: popupEl, className: "ol-popup", style: { display: 'none' } },
         withComponent ? (withComponent(closePopup, openPopup)) : (React__default.createElement(React__default.Fragment, null,
@@ -799,7 +812,6 @@ function Popup(props) {
         React__default.createElement(PopupContext.Provider, { value: { popup: popup, show: openPopup, hide: closePopup, id: uuid() } }, props.children)));
 }
 var usePopup = function () { return React.useContext(PopupContext); };
-//# sourceMappingURL=Popup.js.map
 
 function isEqual(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);

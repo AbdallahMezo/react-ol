@@ -58,6 +58,12 @@ function Popup(props: IPopupProps): JSX.Element {
         }
     }
 
+    function useEffectCleanup() {
+        if (map && popup.current) {
+            map.removeOverlay(popup.current);
+        }
+    }
+
     useEffect(() => {
         //  throw error if popup dont have content or component
         if (!props.withComponent && !props.content) {
@@ -73,6 +79,7 @@ function Popup(props: IPopupProps): JSX.Element {
                 openPopup(props.defaultPosition);
             }
         }
+        return useEffectCleanup;
     }, [map]);
 
     return (

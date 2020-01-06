@@ -61,12 +61,19 @@ function Tooltip(props: ITooltipProps): JSX.Element {
         }
     }
 
+    function useEffectCleanup(): void {
+        if (map && tooltip.current) {
+            map.removeOverlay(tooltip.current);
+        }
+    }
+
     useEffect(() => {
         if (tooltipEl.current && map) {
             tooltipEl.current.innerHTML = props.title;
             tooltip.current = new Overlay(generateTooltipOptions(props, tooltipEl.current));
             map.addOverlay(tooltip.current);
         }
+        return useEffectCleanup;
     }, [map]);
 
     useEffect(() => {

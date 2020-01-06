@@ -582,6 +582,7 @@ function Image(props) {
     return (React.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) },
         React.createElement("div", null, props.children)));
 }
+//# sourceMappingURL=Image.js.map
 
 var VectorContext = createContext({});
 /**
@@ -718,12 +719,18 @@ function Tooltip(props) {
             tooltip.current.setPosition(undefined);
         }
     }
+    function useEffectCleanup() {
+        if (map && tooltip.current) {
+            map.removeOverlay(tooltip.current);
+        }
+    }
     useEffect(function () {
         if (tooltipEl.current && map) {
             tooltipEl.current.innerHTML = props.title;
             tooltip.current = new Overlay(generateTooltipOptions(props, tooltipEl.current));
             map.addOverlay(tooltip.current);
         }
+        return useEffectCleanup;
     }, [map]);
     useEffect(function () {
         if (tooltip.current) {
@@ -771,6 +778,11 @@ function Popup(props) {
             popup.current.setPosition(coordinate);
         }
     }
+    function useEffectCleanup() {
+        if (map && popup.current) {
+            map.removeOverlay(popup.current);
+        }
+    }
     useEffect(function () {
         //  throw error if popup dont have content or component
         if (!props.withComponent && !props.content) {
@@ -784,6 +796,7 @@ function Popup(props) {
                 openPopup(props.defaultPosition);
             }
         }
+        return useEffectCleanup;
     }, [map]);
     return (React.createElement("div", { ref: popupEl, className: "ol-popup", style: { display: 'none' } },
         withComponent ? (withComponent(closePopup, openPopup)) : (React.createElement(React.Fragment, null,
@@ -792,7 +805,6 @@ function Popup(props) {
         React.createElement(PopupContext.Provider, { value: { popup: popup, show: openPopup, hide: closePopup, id: uuid() } }, props.children)));
 }
 var usePopup = function () { return useContext(PopupContext); };
-//# sourceMappingURL=Popup.js.map
 
 function isEqual(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);
