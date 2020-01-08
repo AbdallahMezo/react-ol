@@ -7,10 +7,11 @@ import { useVectorContext } from './Vector';
 import { Translate, Modify } from 'ol/interaction';
 import { Coordinate } from 'ol/coordinate';
 import { usePrevious } from '../custom/hooks';
-
+import { convertHexToRGBA } from '../custom/styles';
 export interface IPolygonProps {
     coordinates: Coordinate[][];
     color?: string;
+    opacity?: number;
     strokeColor?: string;
     strokeWidth?: number;
     isEditable?: boolean;
@@ -27,7 +28,11 @@ export interface IPolygonProps {
 function getPolygonStyles(props: IPolygonProps): Style {
     const options: StyleOptions = {};
 
-    options.fill = new Fill({ color: props.color || 'rgba(0, 0, 255, 0.1)' });
+    options.fill = new Fill({
+        color: props.color
+            ? convertHexToRGBA(props.color, props.opacity || 0.3)
+            : 'rgba(0, 0, 255, 0.1)'
+    });
 
     options.stroke = new Stroke({
         color: props.strokeColor || 'red',
@@ -104,7 +109,7 @@ function Polygon(props: IPolygonProps): JSX.Element {
      * @description update the parent vector context if exists and add feature to its
      * source
      */
-    useEffect((): void => {
+    useEffect((): void | (() => void) => {
         // check if there is no vector layer throw an error
         if (VectorContext && !VectorContext.vector && previousVectorContext) {
             throw new Error(
@@ -118,10 +123,15 @@ function Polygon(props: IPolygonProps): JSX.Element {
             // Add the polygon as a feature to vector layer
             VectorContext.vector.getSource().addFeature(polygon.current);
         }
+        return () => {
+            if (polygon.current && VectorContext.vector) {
+                VectorContext.vector.getSource().removeFeature(polygon.current);
+            }
+        };
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
 
-    return <></>;
+    return <div></div>;
 }
 
 export default Polygon;

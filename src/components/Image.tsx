@@ -96,15 +96,52 @@ function Image(props: IImageProps): JSX.Element {
     const image = useRef<ImageLayer | null>(null);
     const MapContextValues = useMapContext();
     const previousMapContext = usePrevious(MapContextValues);
+    const previousImageProps = usePrevious(props);
 
     /**
-     * Initialize the image layer
-     * component did mount
+     * @description generate image layer and add it to map
+     * @param {IImageProps} props
      */
-    useEffect((): void => {
+    function addImageToMap(props: IImageProps): void {
+        // if there is image currently rendered, remove it to not duplicate the layer
+        // @see https://openlayers.org/en/v6.1.1/doc/errors/#58
+        if (image.current) {
+            MapContextValues.map.removeLayer(image.current);
+        }
+
+        // Create new Image layer and view
         image.current = new ImageLayer(getImageOptions(props));
-        // eslint-disable-next-line
-    }, []);
+        const imageView = new View(getImageViewOptions(props));
+
+        // Fit the image to map extent
+        imageView.fit([0, 0, props.width, props.height]);
+
+        // finally adding the layer and view to the map
+        MapContextValues.map.addLayer(image.current);
+        MapContextValues.map.setView(imageView);
+    }
+
+    /**
+     * @description Check if image layer should be updated based on props change
+     * @param props
+     * @param prevProps
+     */
+    function shouldComponentUpdate(
+        props: IImageProps,
+        prevProps: IImageProps | undefined
+    ): boolean {
+        if (!image || !image.current) {
+            return true;
+        }
+        if (prevProps) {
+            return (
+                prevProps.src !== props.src ||
+                prevProps.width !== props.width ||
+                prevProps.height !== props.height
+            );
+        }
+        return true;
+    }
 
     /**
      * Image had been Initialized and map is now exists so we start
@@ -112,20 +149,27 @@ function Image(props: IImageProps): JSX.Element {
      * to a new view with the pixel projection created for the image
      */
     useEffect((): void => {
+        /**
+         * Map is initialized but image layer cannot have map context
+         * which means that the component had been called out side map component
+         * `Image` is not `children` to `Map`
+         */
         if (MapContextValues && !MapContextValues.map && previousMapContext) {
             throw new Error('Map is not found, Image Layer maybe defined outsite map component');
         }
-        if (MapContextValues.map && image.current) {
-            const imageView = new View(getImageViewOptions(props));
-            MapContextValues.map.addLayer(image.current);
-            MapContextValues.map.setView(imageView);
+
+        if (!shouldComponentUpdate(props, previousImageProps)) {
+            return;
         }
-        // eslint-disable-next-line
-    }, [MapContextValues.map, previousMapContext]);
+
+        if (MapContextValues.map) {
+            addImageToMap(props);
+        }
+    }, [MapContextValues.map, previousMapContext, props]);
 
     return (
         <ImageContext.Provider value={{ ...MapContextValues, vector: image.current }}>
-            {props.children}
+            <div>{props.children}</div>
         </ImageContext.Provider>
     );
 }

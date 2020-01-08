@@ -8,3 +8,4 @@ export declare const defaultPolygonStyle: Style;
  */
 export declare const defaultMarkerStyle: Style;
 export declare const DEFAULT_COLOR = "rgba(35, 187, 245, 1)";
+export declare function convertHexToRGBA(hex: string, opacity: number): string;

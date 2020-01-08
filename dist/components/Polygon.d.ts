@@ -3,6 +3,7 @@ import { Coordinate } from 'ol/coordinate';
 export interface IPolygonProps {
     coordinates: Coordinate[][];
     color?: string;
+    opacity?: number;
     strokeColor?: string;
     strokeWidth?: number;
     isEditable?: boolean;
