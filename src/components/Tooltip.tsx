@@ -47,7 +47,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
      * @param {Coordinate} coordinate
      */
     function showTooltip(coordinate: Coordinate) {
-        if (tooltip.current) {
+        if (tooltip.current && tooltipEl.current) {
             tooltip.current.setPosition(coordinate);
         }
     }
@@ -61,12 +61,19 @@ function Tooltip(props: ITooltipProps): JSX.Element {
         }
     }
 
+    function useEffectCleanup(): void {
+        if (map && tooltip.current) {
+            map.removeOverlay(tooltip.current);
+        }
+    }
+
     useEffect(() => {
         if (tooltipEl.current && map) {
             tooltipEl.current.innerHTML = props.title;
             tooltip.current = new Overlay(generateTooltipOptions(props, tooltipEl.current));
             map.addOverlay(tooltip.current);
         }
+        return useEffectCleanup;
     }, [map]);
 
     useEffect(() => {
@@ -79,9 +86,13 @@ function Tooltip(props: ITooltipProps): JSX.Element {
     }, [props.title]);
 
     return (
-        <TooltipContext.Provider value={{ tooltip: tooltip, showTooltip, hideTooltip, id: uuid() }}>
-            <div ref={tooltipEl}>{props.children}</div>
-        </TooltipContext.Provider>
+        <div ref={tooltipEl}>
+            <TooltipContext.Provider
+                value={{ tooltip: tooltip, show: showTooltip, hide: hideTooltip, id: uuid() }}
+            >
+                {props.children}
+            </TooltipContext.Provider>
+        </div>
     );
 }
 
@@ -91,8 +102,8 @@ export interface IUseTooltip {
     tooltip: {
         current: OverlayType;
     };
-    showTooltip: (coordinate: Coordinate) => void;
-    hideTooltip: () => void;
+    show: (coordinate: Coordinate) => void;
+    hide: () => void;
 }
 
 export const useToolTip = () => useContext(TooltipContext);

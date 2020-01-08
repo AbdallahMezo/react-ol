@@ -8,6 +8,7 @@ import { createContext } from '../core/context';
 import { ViewOptions } from 'ol/View';
 
 import 'ol/ol.css';
+import { usePrevious } from '../custom/hooks';
 
 export interface IMapProps {
     children: React.ReactNode;
@@ -15,6 +16,7 @@ export interface IMapProps {
     center?: number[];
     target?: HTMLDivElement;
     type?: 'osm' | 'image';
+    containerStyle?: React.CSSProperties;
 }
 
 function getMapLayers(type: IMapProps['type']): MapOptions['layers'] {
@@ -57,6 +59,7 @@ const MapContext = createContext({});
 function Map(props: IMapProps): JSX.Element {
     const mapEl = useRef<HTMLDivElement>(null);
     const olMap = useRef<MapType>();
+    const previousProps = usePrevious(props);
 
     if (!props.children && props.type !== 'osm') {
         throw new Error('Map component should contain at least raster layer');
@@ -77,11 +80,11 @@ function Map(props: IMapProps): JSX.Element {
      * @description Memized callback to update map's center if props changed
      * @param {Array<Number>} center new center of the map
      */
-    const updateCenter = useCallback(function(center: number[]): void {
+    function updateCenter(center: number[]): void {
         if (olMap.current) {
             olMap.current.getView().animate({ center });
         }
-    }, []);
+    }
 
     /**
      * @description Memized callback to update map's zoom if props changed
@@ -118,17 +121,19 @@ function Map(props: IMapProps): JSX.Element {
      * update center when center changes
      */
     useEffect((): void => {
-        if (olMap.current && props.center) {
-            updateCenter(props.center);
+        if (previousProps) {
+            if (previousProps.center !== props.center && props.center) {
+                updateCenter(props.center);
+            }
         }
     }, [props.center, updateCenter]);
 
     return (
-        <MapContext.Provider value={{ ...props, map: olMap.current }}>
-            <div ref={mapEl} style={{ width: '100%', height: '100%' }}>
+        <div ref={mapEl} style={{ width: '100%', height: '100%', ...props.containerStyle }}>
+            <MapContext.Provider value={{ ...props, map: olMap.current }}>
                 {props.children}
-            </div>
-        </MapContext.Provider>
+            </MapContext.Provider>
+        </div>
     );
 }
 
