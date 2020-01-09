@@ -347,7 +347,6 @@ var __assign = function() {
 };
 
 var createContext = function (props) { return React__default.createContext(props); };
-//# sourceMappingURL=context.js.map
 
 /**
  * @description Returns previous value, usually created to be used as a container for prev props
@@ -361,7 +360,6 @@ function usePrevious(value) {
     });
     return previousRef.current;
 }
-//# sourceMappingURL=hooks.js.map
 
 function getMapLayers(type) {
     if (type === 'osm') {
@@ -459,7 +457,6 @@ function Map(props) {
         React__default.createElement(MapContext.Provider, { value: __assign({}, props, { map: olMap.current }) }, props.children)));
 }
 var useMapContext = function () { return React.useContext(MapContext); };
-//# sourceMappingURL=Map.js.map
 
 /**
  * @description Create an empty context for the image layer
@@ -589,7 +586,6 @@ function Image(props) {
     return (React__default.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) },
         React__default.createElement("div", null, props.children)));
 }
-//# sourceMappingURL=Image.js.map
 
 var VectorContext = createContext({});
 /**
@@ -652,7 +648,6 @@ function VectorLayer(props) {
         React__default.createElement(VectorContext.Provider, { value: __assign({}, MapContextValues, { vector: vector.current }) }, props.children)));
 }
 var useVectorContext = function () { return React.useContext(VectorContext); };
-//# sourceMappingURL=Vector.js.map
 
 /**
  * @description Default Polygon style
@@ -685,7 +680,6 @@ function convertHexToRGBA(hex, opacity) {
     var b = parseInt(hex.substring(4, 6), 16);
     return "rgba(" + r + "," + g + "," + b + ", " + opacity + ")";
 }
-//# sourceMappingURL=styles.js.map
 
 /**
  * @description Generates the tooltip options @see OverlayOptions
@@ -751,7 +745,6 @@ function Tooltip(props) {
         React__default.createElement(TooltipContext.Provider, { value: { tooltip: tooltip, show: showTooltip, hide: hideTooltip, id: uuid() } }, props.children)));
 }
 var useToolTip = function () { return React.useContext(TooltipContext); };
-//# sourceMappingURL=Tooltip.js.map
 
 /**
  * @description Generates options for the overlaly
@@ -816,7 +809,6 @@ var usePopup = function () { return React.useContext(PopupContext); };
 function isEqual(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);
 }
-//# sourceMappingURL=utils.js.map
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -1462,7 +1454,6 @@ function Marker(props) {
     }, [props.color, props.icon, props.stroke, props.strokeWidth]);
     return React__default.createElement("div", null, " ");
 }
-//# sourceMappingURL=Marker.js.map
 
 /**
  * @description Generate polygon styles from component props
@@ -1564,7 +1555,6 @@ function Polygon(props) {
     }, [VectorContext.vector, previousVectorContext]);
     return React__default.createElement("div", null);
 }
-//# sourceMappingURL=Polygon.js.map
 
 function DrawInteraction(props) {
     var VectorContext = useVectorContext();
@@ -1664,7 +1654,6 @@ function DrawInteraction(props) {
     }, [MapContext.map, VectorContext.vector]);
     return React__default.createElement(React__default.Fragment, null);
 }
-//# sourceMappingURL=draw.js.map
 
 /**
  * inject component with a trasformation object to help transform from pixel to geometry coordinates
@@ -1697,9 +1686,6 @@ function WithPixelTransformation(width, height, controlPoints) {
         }(React__default.Component));
     };
 }
-//# sourceMappingURL=withPixelTransformation.js.map
-
-//# sourceMappingURL=index.js.map
 
 exports.transform = transform;
 exports.Map = Map;
