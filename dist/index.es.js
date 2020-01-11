@@ -805,6 +805,7 @@ function Popup(props) {
         React.createElement(PopupContext.Provider, { value: { popup: popup, show: openPopup, hide: closePopup, id: uuid() } }, props.children)));
 }
 var usePopup = function () { return useContext(PopupContext); };
+//# sourceMappingURL=Popup.js.map
 
 function isEqual(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);
@@ -1416,6 +1417,16 @@ function Marker(props) {
         if (VectorContext.vector) {
             addMarkerToMap(props);
         }
+        if (props.isDraggable && VectorContext.map && marker.current) {
+            // create translate to bind translatable features to map context interaction
+            var translate = new Translate({
+                features: new Collection([marker.current])
+            });
+            // handle dragend
+            translate.on('translateend', handleDragEnd);
+            // bind the interaction to map context
+            VectorContext.map.getInteractions().push(translate);
+        }
         // check if marker has tooltip and creates it
         if (TooltipContext.tooltip && map && marker.current) {
             marker.current.set('withTooltip', true);
@@ -1455,7 +1466,6 @@ function Marker(props) {
     }, [props.color, props.icon, props.stroke, props.strokeWidth]);
     return React.createElement("div", null, " ");
 }
-//# sourceMappingURL=Marker.js.map
 
 /**
  * @description Generate polygon styles from component props
@@ -1694,5 +1704,5 @@ function WithPixelTransformation(width, height, controlPoints) {
 
 //# sourceMappingURL=index.js.map
 
-export { transform, Map, Image, Marker, VectorLayer as Vector, Image as ImageLayer, Polygon$1 as Polygon, Tooltip, Popup, DrawInteraction, WithPixelTransformation as withPixelTransformation };
+export { transform, Map, Image, Marker, VectorLayer as Vector, Image as ImageLayer, Polygon$1 as Polygon, Tooltip, Popup, DrawInteraction, WithPixelTransformation as withPixelTransformation, useVectorContext };
 //# sourceMappingURL=index.es.js.map
