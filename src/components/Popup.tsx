@@ -102,7 +102,7 @@ function Popup(props: IPopupProps): JSX.Element {
     );
 }
 
-export default Popup;
+export { Popup };
 
 export interface IPopupContext {
     popup: OverlayType;

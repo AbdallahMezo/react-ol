@@ -174,7 +174,7 @@ function Image(props: IImageProps): JSX.Element {
     );
 }
 
-export default Image;
+export { Image };
 
 interface IImageContext extends IMapContext {
     imageLayer: ImageLayer;

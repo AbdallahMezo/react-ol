@@ -91,7 +91,7 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
     );
 }
 
-export default VectorLayer;
+export { VectorLayer as Vector };
 
 export interface IVectorContext extends IMapContext {
     vector: Vector;

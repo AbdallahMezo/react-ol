@@ -8,4 +8,3 @@ export * from './components/Tooltip';
 export * from './components/Popup';
 export * from './interactions/draw';
 export * from './custom/withPixelTransformation';
-export { useVectorContext } from './components/Vector';

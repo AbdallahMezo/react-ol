@@ -137,7 +137,7 @@ function Map(props: IMapProps): JSX.Element {
     );
 }
 
-export default Map;
+export { Map };
 
 export interface IMapContext {
     map: MapType;

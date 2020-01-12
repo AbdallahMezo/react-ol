@@ -255,4 +255,4 @@ function Marker(props: IMarkerProps): JSX.Element {
     return <div> </div>;
 }
 
-export default Marker;
+export { Marker };
