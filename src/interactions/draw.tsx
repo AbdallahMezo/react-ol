@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Draw, Translate, Modify } from 'ol/interaction';
 import VectorSource from 'ol/source/Vector';
 import { useVectorContext } from '../components/Vector';
@@ -19,11 +19,13 @@ export interface IDrawInteractionProps {
     allowUpdateDrawnFeatures?: boolean;
     onDragEnd?: (coordinates?: Coordinate[][]) => any;
     onEditEnd?: (coordinates?: Coordinate[][]) => any;
+    isDisabled?: boolean;
 }
 
 function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
     const VectorContext = useVectorContext();
     const MapContext = useMapContext();
+    const drawRef = useRef<Draw>();
 
     /**
      * @description Return the vector source from props or vector context if exists
@@ -121,7 +123,7 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
      */
     function createDrawInteraction(props: IDrawInteractionProps): Draw {
         const drawInteraction = new Draw(getDrawOptions(props));
-
+        drawRef.current = drawInteraction;
         drawInteraction.on('drawend', handleDrawEnd);
 
         return drawInteraction;
@@ -132,14 +134,26 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
      * Component did mount
      */
     useEffect((): void => {
-        if (MapContext.map && VectorContext.vector) {
+        if (MapContext.map && VectorContext.vector && !props.isDisabled) {
             MapContext.map.addInteraction(createDrawInteraction(props));
         }
 
         // eslint-disable-next-line
     }, [MapContext.map, VectorContext.vector]);
 
+    useEffect(() => {
+        if (MapContext.map && VectorContext.vector) {
+            if (props.isDisabled) {
+                // @ts-ignore
+                MapContext.map.removeInteraction(drawRef.current);
+            }
+            if (!props.isDisabled) {
+                MapContext.map.addInteraction(createDrawInteraction(props));
+            }
+        }
+    }, [props.isDisabled]);
+
     return <></>;
 }
 
-export default DrawInteraction;
+export { DrawInteraction };

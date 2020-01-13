@@ -11,7 +11,7 @@ import WebGLPointsLayer from 'ol/layer/WebGLPoints';
 import Overlay from 'ol/Overlay';
 import OverlayPositioning from 'ol/OverlayPositioning';
 import uuid from 'uuid';
-import { Translate, Modify } from 'ol/interaction';
+import { Translate, Modify, Draw } from 'ol/interaction';
 import Point from 'ol/geom/Point';
 import { getCenter } from 'ol/extent';
 import ImageLayer from 'ol/layer/Image';
@@ -1436,7 +1436,6 @@ function Image(props) {
         React.createElement("div", null, props.children)));
 }
 var useImageContext = function () { return useContext(ImageContext); };
-//# sourceMappingURL=Image.js.map
 
 /**
  * @description Generate polygon styles from component props
@@ -1540,9 +1539,122 @@ function Polygon$1(props) {
 }
 //# sourceMappingURL=Polygon.js.map
 
+function DrawInteraction(props) {
+    var VectorContext = useVectorContext();
+    var MapContext = useMapContext();
+    var drawRef = useRef();
+    /**
+     * @description Return the vector source from props or vector context if exists
+     * @param {IDrawInteractionProps} props
+     * @returns {?VectorSource}
+     */
+    function getSourceFromProps(props) {
+        if (props.source) {
+            return props.source;
+        }
+        if (VectorContext.vector) {
+            return VectorContext.vector.getSource();
+        }
+        throw Error('No Vector Layers found attached to map, Vector layer is required to draw features');
+    }
+    /**
+     * @description Generates the draw options to be passed to draw interaction
+     * @param {IDrawInteractionProps} props
+     * @returns {DrawOptions}
+     */
+    function getDrawOptions(props) {
+        // Init options with the default type 'Polygon'
+        var options = { type: 'Polygon' };
+        if (props.type) {
+            options.type = props.type;
+        }
+        options.source = getSourceFromProps(props);
+        return options;
+    }
+    /**
+     * @description Add modify and translate interaction to drawn feature
+     * @param {Feature} feature
+     */
+    function addInteractionsToDrawnFeature(feature) {
+        var featureCollection = new Collection([feature]);
+        // Create the translate interaction
+        var translate = new Translate({
+            features: featureCollection
+        });
+        translate.on('translateend', function (event) {
+            event.stopPropagation();
+            // @ts-ignore
+            var coordinates = feature.getGeometry().getCoordinates();
+            // check if callback is passed through props and call it with new and old
+            // coordinates
+            props.onDragEnd && props.onDragEnd(coordinates);
+        });
+        // create modify interaction
+        var modify = new Modify({
+            features: featureCollection
+        });
+        modify.on('modifyend', function (event) {
+            event.stopPropagation();
+            // @ts-ignore
+            var coordinates = feature.getGeometry().getCoordinates();
+            // check if callback is passed through props and call it with new and old
+            // coordinates
+            props.onEditEnd && props.onEditEnd(coordinates);
+        });
+        MapContext.map.getInteractions().extend([modify, translate]);
+    }
+    /**
+     * Event handler for draw finish
+     * @param {DrawEvent} event
+     */
+    function handleDrawEnd(event) {
+        event.feature.setStyle(defaultPolygonStyle);
+        if (props.allowUpdateDrawnFeatures) {
+            addInteractionsToDrawnFeature(event.feature);
+        }
+        if (props.onDrawEnd) {
+            props.onDrawEnd && props.onDrawEnd(event.feature, event.target);
+        }
+    }
+    /**
+     * @description create a draw interaction and return it to be used
+     * @param {IDrawInteractionProps} props
+     * @returns {Draw}
+     */
+    function createDrawInteraction(props) {
+        var drawInteraction = new Draw(getDrawOptions(props));
+        drawRef.current = drawInteraction;
+        drawInteraction.on('drawend', handleDrawEnd);
+        return drawInteraction;
+    }
+    /**
+     * @description Apply the draw interaction to map
+     * Component did mount
+     */
+    useEffect(function () {
+        if (MapContext.map && VectorContext.vector && !props.isDisabled) {
+            MapContext.map.addInteraction(createDrawInteraction(props));
+        }
+        // eslint-disable-next-line
+    }, [MapContext.map, VectorContext.vector]);
+    useEffect(function () {
+        if (MapContext.map && VectorContext.vector) {
+            if (props.isDisabled) {
+                // @ts-ignore
+                MapContext.map.removeInteraction(drawRef.current);
+            }
+            if (!props.isDisabled) {
+                MapContext.map.addInteraction(createDrawInteraction(props));
+            }
+        }
+    }, [props.isDisabled]);
+    return React.createElement(React.Fragment, null);
+}
 //# sourceMappingURL=draw.js.map
 
 //# sourceMappingURL=withPixelTransformation.js.map
 
-export { transform, Map, useMapContext, Marker, VectorLayer as Vector, useVectorContext, Image, useImageContext, Polygon$1 as Polygon, Tooltip, useToolTip, Popup, usePopup };
+//# sourceMappingURL=index.js.map
+
+export { transform, Map, useMapContext, Marker, VectorLayer as Vector, useVectorContext, Image, useImageContext, Polygon$1 as Polygon, Tooltip, useToolTip, Popup, usePopup, DrawInteraction };
 //# sourceMappingURL=index.es.js.map
