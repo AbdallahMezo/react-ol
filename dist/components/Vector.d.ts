@@ -8,6 +8,9 @@ export interface IVectorLayerProps {
     style?: Style;
     children?: React.ReactNode;
     isWebGl?: boolean;
+    /** `LiteralStyles`
+     */
+    webGlStyle?: any;
 }
 declare function VectorLayer(props: IVectorLayerProps): JSX.Element;
 export default VectorLayer;

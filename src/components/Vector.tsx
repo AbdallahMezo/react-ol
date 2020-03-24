@@ -57,8 +57,13 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
      * component did mount
      * @description Initialize vector layer
      */
-    useEffect((): void => {
+    useEffect((): (() => void) => {
         createVectorLayer();
+        return (): void => {
+            if (vector.current && MapContextValues.map) {
+                MapContextValues.map.removeLayer(vector.current);
+            }
+        };
         // eslint-disable-next-line
     }, []);
 

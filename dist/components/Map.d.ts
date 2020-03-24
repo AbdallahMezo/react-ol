@@ -7,6 +7,7 @@ export interface IMapProps {
     center?: number[];
     target?: HTMLDivElement;
     type?: 'osm' | 'image';
+    containerStyle?: React.CSSProperties;
 }
 declare function Map(props: IMapProps): JSX.Element;
 export default Map;

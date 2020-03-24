@@ -25,6 +25,7 @@ var uuid = _interopDefault(require('uuid'));
 var interaction = require('ol/interaction');
 var Point = _interopDefault(require('ol/geom/Point'));
 var geom = require('ol/geom');
+var CircleStyle = _interopDefault(require('ol/style/Circle'));
 
 /* eslint-disable */
 let transform = {};
@@ -627,6 +628,11 @@ function VectorLayer(props) {
      */
     React.useEffect(function () {
         createVectorLayer();
+        return function () {
+            if (vector.current && MapContextValues.map) {
+                MapContextValues.map.removeLayer(vector.current);
+            }
+        };
         // eslint-disable-next-line
     }, []);
     /**
@@ -812,6 +818,7 @@ function Popup(props) {
         React__default.createElement(PopupContext.Provider, { value: { popup: popup, show: openPopup, hide: closePopup, id: uuid() } }, props.children)));
 }
 var usePopup = function () { return React.useContext(PopupContext); };
+//# sourceMappingURL=Popup.js.map
 
 function isEqual(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);
@@ -1470,6 +1477,8 @@ function Marker(props) {
  * @returns {Style} style to be applied to the polygon
  */
 function getPolygonStyles(props) {
+    if (props.style)
+        return props.style;
     var options = {};
     options.fill = new style.Fill({
         color: props.color
@@ -1484,6 +1493,8 @@ function getPolygonStyles(props) {
 }
 function Polygon(props) {
     var polygon = React.useRef();
+    var dragInteraction = React.useRef();
+    var modifyInteraction = React.useRef();
     var VectorContext = useVectorContext();
     var previousVectorContext = usePrevious(VectorContext);
     React.useEffect(function () {
@@ -1511,6 +1522,7 @@ function Polygon(props) {
                 // coordinates
                 props.onDragEnd && props.onDragEnd(coordinates);
             });
+            dragInteraction.current = translate;
             // bind the interaction to map context
             VectorContext.map.getInteractions().push(translate);
         }
@@ -1535,6 +1547,7 @@ function Polygon(props) {
                 // coordinates
                 props.onEditEnd && props.onEditEnd(coordinates);
             });
+            modifyInteraction.current = modify;
             // bind the interaction to map context
             VectorContext.map.getInteractions().push(modify);
         }
@@ -1557,18 +1570,54 @@ function Polygon(props) {
         }
         return function () {
             if (polygon.current && VectorContext.vector) {
-                VectorContext.vector.getSource().removeFeature(polygon.current);
+                if (VectorContext.vector.getSource().hasFeature(polygon.current)) {
+                    VectorContext.vector.getSource().removeFeature(polygon.current);
+                }
             }
         };
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
+    /**
+     * @description Cleans interactions on component unmount
+     */
+    React.useEffect(function () {
+        return function () {
+            if (VectorContext.map && dragInteraction.current) {
+                VectorContext.map.removeInteraction(dragInteraction.current);
+            }
+            if (VectorContext.map && modifyInteraction.current) {
+                VectorContext.map.removeInteraction(modifyInteraction.current);
+            }
+        };
+    }, []);
     return React__default.createElement("div", null);
 }
-//# sourceMappingURL=Polygon.js.map
 
 function DrawInteraction(props) {
     var VectorContext = useVectorContext();
     var MapContext = useMapContext();
+    var drawRef = React.useRef();
+    function getPolygonStyle(color) {
+        return new style.Style({
+            fill: new style.Fill({
+                color: convertHexToRGBA(color, 0.3)
+            }),
+            stroke: new style.Stroke({
+                color: convertHexToRGBA(color, 0.5),
+                width: 2
+            }),
+            image: new CircleStyle({
+                radius: 5,
+                fill: new style.Fill({
+                    color: '#0199ff'
+                }),
+                stroke: new style.Stroke({
+                    color: '#fff',
+                    width: 1
+                })
+            })
+        });
+    }
     /**
      * @description Return the vector source from props or vector context if exists
      * @param {IDrawInteractionProps} props
@@ -1593,6 +1642,9 @@ function DrawInteraction(props) {
         var options = { type: 'Polygon' };
         if (props.type) {
             options.type = props.type;
+        }
+        if (props.drawingColor) {
+            options.style = getPolygonStyle(props.drawingColor);
         }
         options.source = getSourceFromProps(props);
         return options;
@@ -1630,18 +1682,33 @@ function DrawInteraction(props) {
         MapContext.map.getInteractions().extend([modify, translate]);
     }
     /**
+     * Event handler for start drawing
+     * @param {DrawEvent} event
+     */
+    var handleDrawStart = React.useCallback(function (event) {
+        if (props.drawingColor) {
+            event.feature.setStyle(getPolygonStyle(props.drawingColor));
+        }
+    }, [props.drawingColor]);
+    /**
      * Event handler for draw finish
      * @param {DrawEvent} event
      */
-    function handleDrawEnd(event) {
-        event.feature.setStyle(defaultPolygonStyle);
+    var handleDrawEnd = React.useCallback(function (event) {
+        event.feature.setStyle(props.drawingColor ? getPolygonStyle(props.drawingColor) : defaultPolygonStyle);
         if (props.allowUpdateDrawnFeatures) {
             addInteractionsToDrawnFeature(event.feature);
         }
         if (props.onDrawEnd) {
-            props.onDrawEnd && props.onDrawEnd(event.feature, event.target);
+            props.onDrawEnd && props.onDrawEnd(event.feature, event);
         }
-    }
+        if (props.discardDrawenFeature) {
+            var vectorSource = VectorContext.vector.getSource();
+            if (vectorSource) {
+                vectorSource.removeFeature(event.feature);
+            }
+        }
+    }, [props.drawingColor, props.onDrawEnd, props.allowUpdateDrawnFeatures]);
     /**
      * @description create a draw interaction and return it to be used
      * @param {IDrawInteractionProps} props
@@ -1650,18 +1717,49 @@ function DrawInteraction(props) {
     function createDrawInteraction(props) {
         var drawInteraction = new interaction.Draw(getDrawOptions(props));
         drawInteraction.on('drawend', handleDrawEnd);
+        drawInteraction.on('drawstart', handleDrawStart);
         return drawInteraction;
+    }
+    /**
+     * @description add draw interaction to map
+     */
+    function addDrawToMap() {
+        if (MapContext.map && VectorContext.vector) {
+            var drawInteraction = createDrawInteraction(props);
+            if (props.isDisabled) {
+                drawInteraction.setActive(false);
+            }
+            drawRef.current = drawInteraction;
+            MapContext.map.addInteraction(drawInteraction);
+        }
     }
     /**
      * @description Apply the draw interaction to map
      * Component did mount
      */
     React.useEffect(function () {
-        if (MapContext.map && VectorContext.vector) {
-            MapContext.map.addInteraction(createDrawInteraction(props));
-        }
+        addDrawToMap();
+        return function () {
+            if (drawRef.current && MapContext.map) {
+                MapContext.map.removeInteraction(drawRef.current);
+            }
+        };
         // eslint-disable-next-line
     }, [MapContext.map, VectorContext.vector]);
+    React.useEffect(function () {
+        if (props.isDisabled && drawRef.current) {
+            drawRef.current.setActive(false);
+        }
+        if (!props.isDisabled && drawRef.current) {
+            drawRef.current.setActive(true);
+        }
+    }, [props.isDisabled]);
+    React.useEffect(function () {
+        if (props.drawingColor && drawRef.current) {
+            drawRef.current.on('drawstart', handleDrawStart);
+            drawRef.current.on('drawend', handleDrawEnd);
+        }
+    }, [props.drawingColor]);
     return React__default.createElement(React__default.Fragment, null);
 }
 //# sourceMappingURL=draw.js.map
@@ -1703,9 +1801,11 @@ function WithPixelTransformation(width, height, controlPoints) {
 
 exports.transform = transform;
 exports.Map = Map;
+exports.useMapContext = useMapContext;
 exports.Image = Image;
 exports.Marker = Marker;
 exports.Vector = VectorLayer;
+exports.useVectorContext = useVectorContext;
 exports.ImageLayer = Image;
 exports.Polygon = Polygon;
 exports.Tooltip = Tooltip;

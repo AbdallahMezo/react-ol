@@ -1,8 +1,8 @@
 export { default as transform } from './core/transform';
-export { default as Map } from './components/Map';
+export { default as Map, useMapContext } from './components/Map';
 export { default as Image } from './components/Image';
 export { default as Marker } from './components/Marker';
-export { default as Vector } from './components/Vector';
+export { default as Vector, useVectorContext } from './components/Vector';
 export { default as ImageLayer } from './components/Image';
 export { default as Polygon } from './components/Polygon';
 export { default as Tooltip } from './components/Tooltip';

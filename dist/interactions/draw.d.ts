@@ -11,6 +11,8 @@ export interface IDrawInteractionProps {
     allowUpdateDrawnFeatures?: boolean;
     onDragEnd?: (coordinates?: Coordinate[][]) => any;
     onEditEnd?: (coordinates?: Coordinate[][]) => any;
+    drawingColor?: string;
+    isDisabled?: boolean;
 }
 declare function DrawInteraction(props: IDrawInteractionProps): JSX.Element;
 export default DrawInteraction;
