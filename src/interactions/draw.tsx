@@ -177,7 +177,7 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
      */
     function createDrawInteraction(props: IDrawInteractionProps): Draw {
         const drawInteraction = new Draw(getDrawOptions(props));
-
+        drawRef.current = drawInteraction;
         drawInteraction.on('drawend', handleDrawEnd);
 
         drawInteraction.on('drawstart', handleDrawStart);
@@ -233,4 +233,4 @@ function DrawInteraction(props: IDrawInteractionProps): JSX.Element {
     return <></>;
 }
 
-export default DrawInteraction;
+export { DrawInteraction };

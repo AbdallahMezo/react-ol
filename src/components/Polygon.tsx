@@ -157,4 +157,4 @@ function Polygon(props: IPolygonProps): JSX.Element {
     return <div></div>;
 }
 
-export default Polygon;
+export { Polygon };

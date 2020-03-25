@@ -181,25 +181,6 @@ function Marker(props: IMarkerProps): JSX.Element {
             }
         }
     }
-
-    /**
-     * @description Checks if the marker is draggable and mapcontext updated
-     * to apply drag interaction to the marker
-     */
-    useEffect((): void => {
-        if (props.isDraggable && VectorContext.map && marker.current) {
-            // create translate to bind translatable features to map context interaction
-            const translate = new Translate({
-                features: new Collection([marker.current])
-            });
-            // handle dragend
-            translate.on('translateend', handleDragEnd);
-            // bind the interaction to map context
-            VectorContext.map.getInteractions().push(translate);
-        }
-        // eslint-disable-next-line
-    }, [VectorContext.map, props.isDraggable, previousVectorContext]);
-
     /**
      * @description update the parent vector context if exists and add feature to its
      * source
@@ -214,6 +195,17 @@ function Marker(props: IMarkerProps): JSX.Element {
 
         if (VectorContext.vector) {
             addMarkerToMap(props);
+        }
+        if (props.isDraggable && VectorContext.map && marker.current) {
+            // create translate to bind translatable features to map context interaction
+            const translate = new Translate({
+                features: new Collection([marker.current])
+            });
+            // handle dragend
+
+            translate.on('translateend', handleDragEnd);
+            // bind the interaction to map context
+            VectorContext.map.getInteractions().push(translate);
         }
         // check if marker has tooltip and creates it
         if (TooltipContext.tooltip && map && marker.current) {
@@ -263,4 +255,4 @@ function Marker(props: IMarkerProps): JSX.Element {
     return <div> </div>;
 }
 
-export default Marker;
+export { Marker };

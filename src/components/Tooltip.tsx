@@ -96,7 +96,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
     );
 }
 
-export default Tooltip;
+export { Tooltip };
 
 export interface IUseTooltip {
     tooltip: {
