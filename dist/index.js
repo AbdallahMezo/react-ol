@@ -487,22 +487,6 @@ function getImageSourceProjection(width, height) {
     });
 }
 /**
- * @description Generates Image props and `new Static({options from props})` considered
- * as the source of the image
- * @param {IImageProps} props
- * @returns {ImageOptions}
- */
-function getImageOptions(props) {
-    var options = {};
-    // create the static image source
-    options.source = new Static({
-        url: props.src,
-        projection: getImageSourceProjection(props.width, props.height),
-        imageExtent: getExtent(props.width, props.height)
-    });
-    return options;
-}
-/**
  * @description Generates the `new View()` options to be passed while initializing
  * the new map view based on image layer
  * @param {IImageProps} props
@@ -531,6 +515,7 @@ function Image(props) {
     var MapContextValues = useMapContext();
     var previousMapContext = usePrevious(MapContextValues);
     var previousImageProps = usePrevious(props);
+    var _a = React.useState(), state = _a[0], setState = _a[1];
     /**
      * @description generate image layer and add it to map
      * @param {IImageProps} props
@@ -541,8 +526,23 @@ function Image(props) {
         if (image.current) {
             MapContextValues.map.removeLayer(image.current);
         }
+        // create the static image source
+        var source = new Static({
+            url: props.src,
+            projection: getImageSourceProjection(props.width, props.height),
+            imageExtent: getExtent(props.width, props.height)
+        });
+        source.on('imageloadstart', function () {
+            setState('loading');
+        });
+        source.on('imageloadend', function () {
+            setState('ready');
+        });
+        source.on('imageloaderror', function () {
+            setState('error');
+        });
         // Create new Image layer and view
-        image.current = new ImageLayer(getImageOptions(props));
+        image.current = new ImageLayer({ source: source });
         var imageView = new ol.View(getImageViewOptions(props));
         // Fit the image to map extent
         imageView.fit([0, 0, props.width, props.height]);
@@ -587,10 +587,18 @@ function Image(props) {
             addImageToMap(props);
         }
     }, [MapContextValues.map, previousMapContext, props]);
+    function renderImageLayer() {
+        if (state === 'loading' && props.loadingMessage) {
+            return props.loadingMessage;
+        }
+        if (state === 'error' && props.errorMessage) {
+            return props.errorMessage;
+        }
+        return props.children;
+    }
     return (React__default.createElement(ImageContext.Provider, { value: __assign({}, MapContextValues, { vector: image.current }) },
-        React__default.createElement("div", null, props.children)));
+        React__default.createElement("div", null, renderImageLayer())));
 }
-//# sourceMappingURL=Image.js.map
 
 var VectorContext = createContext({});
 /**
@@ -1592,6 +1600,7 @@ function Polygon(props) {
     }, []);
     return React__default.createElement("div", null);
 }
+//# sourceMappingURL=Polygon.js.map
 
 function DrawInteraction(props) {
     var VectorContext = useVectorContext();
