@@ -1,6 +1,6 @@
 {
     "name": "@wakecaptech/wakecap-ol",
-    "version": "0.0.4-alpha",
+    "version": "0.0.5-alpha",
     "description": "Functional, composed, extended and react wrapper for OpenLayers",
     "main": "dist/index.js",
     "module": "dist/index.es.js",
@@ -13,6 +13,7 @@
         "test": "cross-env CI=1 react-scripts-ts test --env=jsdom",
         "test:watch": "react-scripts-ts test --env=jsdom",
         "build": "rollup -c",
+        "build:reset": "rm -rf ./dist ./build && tsc && rollup -c",
         "start": "rollup -c -w",
         "prepare": "yarn run build"
     },

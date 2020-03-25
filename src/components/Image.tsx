@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useContext } from 'react';
+import React, { useRef, useEffect, useContext, useState } from 'react';
 import { getCenter } from 'ol/extent';
-import ImageLayer, { Options as ImageOptions } from 'ol/layer/Image';
+import ImageLayer from 'ol/layer/Image';
 import Projection from 'ol/proj/Projection';
 import Static from 'ol/source/ImageStatic';
 import { ProjectionLike } from 'ol/proj';
@@ -18,6 +18,8 @@ export interface IImageProps {
     zoom?: number;
     minZoom?: number;
     maxZoom?: number;
+    errorMessage?: string | React.ReactElement;
+    loadingMessage?: string | React.ReactElement;
 }
 
 /**
@@ -45,25 +47,6 @@ function getImageSourceProjection(width: number, height: number): ProjectionLike
         units: 'pixels',
         extent: getExtent(width, height)
     });
-}
-
-/**
- * @description Generates Image props and `new Static({options from props})` considered
- * as the source of the image
- * @param {IImageProps} props
- * @returns {ImageOptions}
- */
-function getImageOptions(props: IImageProps): ImageOptions {
-    const options: ImageOptions = {};
-
-    // create the static image source
-    options.source = new Static({
-        url: props.src,
-        projection: getImageSourceProjection(props.width, props.height),
-        imageExtent: getExtent(props.width, props.height)
-    });
-
-    return options;
 }
 
 /**
@@ -97,6 +80,7 @@ function Image(props: IImageProps): JSX.Element {
     const MapContextValues = useMapContext();
     const previousMapContext = usePrevious(MapContextValues);
     const previousImageProps = usePrevious(props);
+    const [state, setState] = useState<'loading' | 'ready' | 'error'>();
 
     /**
      * @description generate image layer and add it to map
@@ -109,8 +93,26 @@ function Image(props: IImageProps): JSX.Element {
             MapContextValues.map.removeLayer(image.current);
         }
 
+        // create the static image source
+        const source = new Static({
+            url: props.src,
+            projection: getImageSourceProjection(props.width, props.height),
+            imageExtent: getExtent(props.width, props.height)
+        });
+
+        source.on('imageloadstart', function() {
+            setState('loading');
+        });
+        source.on('imageloadend', function() {
+            setState('ready');
+        });
+
+        source.on('imageloaderror', function() {
+            setState('error');
+        });
+
         // Create new Image layer and view
-        image.current = new ImageLayer(getImageOptions(props));
+        image.current = new ImageLayer({ source });
         const imageView = new View(getImageViewOptions(props));
 
         // Fit the image to map extent
@@ -167,9 +169,19 @@ function Image(props: IImageProps): JSX.Element {
         }
     }, [MapContextValues.map, previousMapContext, props]);
 
+    function renderImageLayer(): React.ReactNode | string | React.ReactElement {
+        if (state === 'loading' && props.loadingMessage) {
+            return props.loadingMessage;
+        }
+        if (state === 'error' && props.errorMessage) {
+            return props.errorMessage;
+        }
+        return props.children;
+    }
+
     return (
         <ImageContext.Provider value={{ ...MapContextValues, vector: image.current }}>
-            <div>{props.children}</div>
+            <div>{renderImageLayer()}</div>
         </ImageContext.Provider>
     );
 }

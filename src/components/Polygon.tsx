@@ -16,6 +16,7 @@ export interface IPolygonProps {
     strokeWidth?: number;
     isEditable?: boolean;
     isDraggable?: boolean;
+    style?: Style | Style[];
     onDragEnd?: (coordinates?: Coordinate[][]) => any;
     onEditEnd?: (coordinates?: Coordinate[][]) => any;
 }
@@ -25,7 +26,8 @@ export interface IPolygonProps {
  * @param {IPolygonProps} props polygon props
  * @returns {Style} style to be applied to the polygon
  */
-function getPolygonStyles(props: IPolygonProps): Style {
+function getPolygonStyles(props: IPolygonProps): Style | Style[] {
+    if (props.style) return props.style;
     const options: StyleOptions = {};
 
     options.fill = new Fill({
@@ -44,6 +46,8 @@ function getPolygonStyles(props: IPolygonProps): Style {
 
 function Polygon(props: IPolygonProps): JSX.Element {
     const polygon = useRef<Feature>();
+    const dragInteraction = useRef<Translate>();
+    const modifyInteraction = useRef<Modify>();
     const VectorContext = useVectorContext();
     const previousVectorContext = usePrevious(VectorContext);
 
@@ -73,6 +77,7 @@ function Polygon(props: IPolygonProps): JSX.Element {
                 // coordinates
                 props.onDragEnd && props.onDragEnd(coordinates);
             });
+            dragInteraction.current = translate;
             // bind the interaction to map context
             VectorContext.map.getInteractions().push(translate);
         }
@@ -99,6 +104,8 @@ function Polygon(props: IPolygonProps): JSX.Element {
                 // coordinates
                 props.onEditEnd && props.onEditEnd(coordinates);
             });
+
+            modifyInteraction.current = modify;
             // bind the interaction to map context
             VectorContext.map.getInteractions().push(modify);
         }
@@ -125,11 +132,27 @@ function Polygon(props: IPolygonProps): JSX.Element {
         }
         return () => {
             if (polygon.current && VectorContext.vector) {
-                VectorContext.vector.getSource().removeFeature(polygon.current);
+                if (VectorContext.vector.getSource().hasFeature(polygon.current)) {
+                    VectorContext.vector.getSource().removeFeature(polygon.current);
+                }
             }
         };
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);
+
+    /**
+     * @description Cleans interactions on component unmount
+     */
+    useEffect(() => {
+        return () => {
+            if (VectorContext.map && dragInteraction.current) {
+                VectorContext.map.removeInteraction(dragInteraction.current);
+            }
+            if (VectorContext.map && modifyInteraction.current) {
+                VectorContext.map.removeInteraction(modifyInteraction.current);
+            }
+        };
+    }, []);
 
     return <div></div>;
 }
