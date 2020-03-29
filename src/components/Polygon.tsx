@@ -154,6 +154,12 @@ function Polygon(props: IPolygonProps): JSX.Element {
         };
     }, []);
 
+    useEffect(() => {
+        if (polygon.current) {
+            polygon.current.setGeometry(new BasePolygon(props.coordinates));
+        }
+    }, [props.coordinates]);
+
     return <div></div>;
 }
 

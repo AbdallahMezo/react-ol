@@ -10,6 +10,8 @@ import { ViewOptions } from 'ol/View';
 import { createContext } from '../core/context';
 import { usePrevious } from '../custom/hooks';
 // eslint-disable-next-line
+
+export type ImageLoadStatus = 'loading' | 'error' | 'ready';
 export interface IImageProps {
     src: string;
     width: number;
@@ -20,6 +22,7 @@ export interface IImageProps {
     maxZoom?: number;
     errorMessage?: string | React.ReactElement;
     loadingMessage?: string | React.ReactElement;
+    onImageLoad?: (status: ImageLoadStatus) => void;
 }
 
 /**
@@ -80,7 +83,7 @@ function Image(props: IImageProps): JSX.Element {
     const MapContextValues = useMapContext();
     const previousMapContext = usePrevious(MapContextValues);
     const previousImageProps = usePrevious(props);
-    const [state, setState] = useState<'loading' | 'ready' | 'error'>();
+    const [state, setState] = useState<ImageLoadStatus>();
 
     /**
      * @description generate image layer and add it to map
@@ -105,10 +108,12 @@ function Image(props: IImageProps): JSX.Element {
         });
         source.on('imageloadend', function() {
             setState('ready');
+            props.onImageLoad && props.onImageLoad('ready');
         });
 
         source.on('imageloaderror', function() {
             setState('error');
+            props.onImageLoad && props.onImageLoad('error');
         });
 
         // Create new Image layer and view
