@@ -22,6 +22,7 @@ export interface IMarkerProps {
     width?: number;
     isDraggable?: boolean;
     onDragEnd?: (coordinate: number[], startCoordinate: number[]) => any;
+    updateMarkerLocationOnDrag?: (coordinates: number[]) => boolean;
     children?: React.ReactChild;
 }
 
@@ -101,6 +102,13 @@ function Marker(props: IMarkerProps): JSX.Element {
     function handleDragEnd(event: ITranslateEvent): void {
         // check if callback is passed through props and call it with new and old
         // coordinates
+        if (
+            props.updateMarkerLocationOnDrag &&
+            !props.updateMarkerLocationOnDrag(event.coordinate) &&
+            marker.current
+        ) {
+            marker.current.setGeometry(new Point(event.startCoordinate));
+        }
         props.onDragEnd && props.onDragEnd(event.coordinate, event.startCoordinate);
     }
 
@@ -186,6 +194,7 @@ function Marker(props: IMarkerProps): JSX.Element {
      * source
      */
     useEffect((): (() => void) | void => {
+        let translate: Translate;
         const { map } = VectorContext;
         // check if there is no vector layer throw an error
 
@@ -198,11 +207,10 @@ function Marker(props: IMarkerProps): JSX.Element {
         }
         if (props.isDraggable && VectorContext.map && marker.current) {
             // create translate to bind translatable features to map context interaction
-            const translate = new Translate({
+            translate = new Translate({
                 features: new Collection([marker.current])
             });
             // handle dragend
-
             translate.on('translateend', handleDragEnd);
             // bind the interaction to map context
             VectorContext.map.getInteractions().push(translate);
@@ -223,7 +231,12 @@ function Marker(props: IMarkerProps): JSX.Element {
             map.on('click', createPopup);
         }
 
-        return useEffectCleanup;
+        return () => {
+            if (translate && map) {
+                map.removeInteraction(translate);
+            }
+            useEffectCleanup();
+        };
 
         // eslint-disable-next-line
     }, [VectorContext.vector, previousVectorContext]);

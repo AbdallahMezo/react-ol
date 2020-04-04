@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useContext } from 'react';
 import BaseMap, { default as MapType } from 'ol/Map';
 import { MapOptions } from 'ol/PluggableMap';
-import { View } from 'ol';
+import { View, MapBrowserEvent } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import { createContext } from '../core/context';
@@ -16,6 +16,8 @@ export interface IMapProps {
     center?: number[];
     target?: HTMLDivElement;
     type?: 'osm' | 'image';
+    allowDrop?: boolean;
+    onDrop?: (event: MapBrowserEvent) => void;
     containerStyle?: React.CSSProperties;
 }
 
@@ -96,6 +98,18 @@ function Map(props: IMapProps): JSX.Element {
         }
     }, []);
 
+    function handleDrop() {
+        if (olMap.current) {
+            const dropEvent = new MapBrowserEvent(
+                'dropFinished',
+                olMap.current,
+                new PointerEvent('pointer', event)
+            );
+            console.log('handleDrop -> dropEvent', dropEvent.coordinate);
+            props.onDrop && props.onDrop(dropEvent);
+        }
+    }
+
     /**
      * @description Component did mount
      */
@@ -129,8 +143,13 @@ function Map(props: IMapProps): JSX.Element {
     }, [props.center, updateCenter]);
 
     return (
-        <div ref={mapEl} style={{ width: '100%', height: '100%', ...props.containerStyle }}>
-            <MapContext.Provider value={{ ...props, map: olMap.current }}>
+        <div
+            ref={mapEl}
+            style={{ width: '100%', height: '100%', ...props.containerStyle }}
+            onDrop={handleDrop}
+            onDragOver={event => event.preventDefault()}
+        >
+            <MapContext.Provider value={{ ...props, map: olMap.current, mapRef: mapEl }}>
                 {props.children}
             </MapContext.Provider>
         </div>
@@ -141,6 +160,7 @@ export { Map };
 
 export interface IMapContext {
     map: MapType;
+    mapRef: React.RefObject<HTMLDivElement>;
 }
 
 export const useMapContext = (): IMapContext => useContext(MapContext);

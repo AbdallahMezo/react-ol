@@ -13,6 +13,7 @@ export interface IVectorLayerProps {
     style?: Style;
     children?: React.ReactNode;
     isWebGl?: boolean;
+    containerStyle?: React.CSSProperties;
     /** `LiteralStyles`
      */
     webGlStyle?: any;
@@ -88,7 +89,7 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
      * @description return a provider to create vector context with this vector layer
      */
     return (
-        <div>
+        <div style={props.containerStyle}>
             <VectorContext.Provider value={{ ...MapContextValues, vector: vector.current }}>
                 {props.children}
             </VectorContext.Provider>

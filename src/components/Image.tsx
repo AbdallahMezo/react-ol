@@ -16,6 +16,7 @@ export interface IImageProps {
     src: string;
     width: number;
     height: number;
+    containerStyle?: React.CSSProperties;
     children?: React.ReactNode;
     zoom?: number;
     minZoom?: number;
@@ -186,7 +187,7 @@ function Image(props: IImageProps): JSX.Element {
 
     return (
         <ImageContext.Provider value={{ ...MapContextValues, vector: image.current }}>
-            <div>{renderImageLayer()}</div>
+            <div style={props.containerStyle}>{renderImageLayer()}</div>
         </ImageContext.Provider>
     );
 }

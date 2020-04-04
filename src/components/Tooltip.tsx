@@ -8,11 +8,13 @@ import uuid from 'uuid';
 export interface ITooltipProps {
     title: string;
     children: React.ReactNode;
+    component?: React.ReactElement;
     position?: OverlayPositioning;
     id?: string;
     className?: string;
     coordinate?: Coordinate;
     autoPan?: boolean;
+    offset?: number[];
 }
 
 /**
@@ -24,7 +26,7 @@ function generateTooltipOptions(props: ITooltipProps, element: HTMLDivElement): 
     const options: OverlayOptions = {};
 
     options.element = element;
-    options.offset = [15, 0];
+    options.offset = props.offset ? props.offset : [15, 0];
     options.autoPan = props.autoPan;
     options.className = props.className ? props.className : '';
     options.id = props.id ? props.id : '';
@@ -69,7 +71,9 @@ function Tooltip(props: ITooltipProps): JSX.Element {
 
     useEffect(() => {
         if (tooltipEl.current && map) {
-            tooltipEl.current.innerHTML = props.title;
+            if (!props.component) {
+                tooltipEl.current.innerHTML = props.title;
+            }
             tooltip.current = new Overlay(generateTooltipOptions(props, tooltipEl.current));
             map.addOverlay(tooltip.current);
         }
@@ -79,7 +83,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
     useEffect(() => {
         if (tooltip.current) {
             const tooltipEl = tooltip.current.getElement();
-            if (tooltipEl) {
+            if (tooltipEl && !props.component) {
                 tooltipEl.innerHTML = props.title;
             }
         }
@@ -87,6 +91,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
 
     return (
         <div ref={tooltipEl}>
+            {props.component && props.component}
             <TooltipContext.Provider
                 value={{ tooltip: tooltip, show: showTooltip, hide: hideTooltip, id: uuid() }}
             >
