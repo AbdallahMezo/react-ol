@@ -85,6 +85,7 @@ function Map(props: IMapProps): JSX.Element {
     function updateCenter(center: number[]): void {
         if (olMap.current) {
             olMap.current.getView().animate({ center });
+            olMap.current.getView().setMinZoom(-2);
         }
     }
 
@@ -105,7 +106,6 @@ function Map(props: IMapProps): JSX.Element {
                 olMap.current,
                 new PointerEvent('pointer', event)
             );
-            console.log('handleDrop -> dropEvent', dropEvent.coordinate);
             props.onDrop && props.onDrop(dropEvent);
         }
     }
