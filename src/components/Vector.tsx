@@ -6,6 +6,8 @@ import { createContext } from '../core/context';
 import { Style } from 'ol/style';
 import { usePrevious } from '../custom/hooks';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints';
+import VectorRenderType from 'ol/layer/VectorRenderType';
+import { Translate } from 'ol/interaction';
 
 // eslint-disable-next-line
 export interface IVectorLayerProps {
@@ -14,6 +16,8 @@ export interface IVectorLayerProps {
     children?: React.ReactNode;
     isWebGl?: boolean;
     containerStyle?: React.CSSProperties;
+    renderMode?: VectorRenderType;
+    withTranslate?: boolean;
     /** `LiteralStyles`
      */
     webGlStyle?: any;
@@ -32,6 +36,9 @@ function getVectorOptions(props: IVectorLayerProps): Options {
     options.source = props.source || new VectorSource({ wrapX: false, useSpatialIndex: false });
     options.style = props.style || new Style({});
     options.zIndex = 1;
+    if (props.renderMode) {
+        options.renderMode = props.renderMode;
+    }
     if (props.isWebGl && props.webGlStyle) {
         // @ts-ignore
         options.style = props.webGlStyle;
@@ -52,6 +59,23 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
         } else {
             vector.current = new Vector(getVectorOptions(props));
         }
+    }
+
+    function addTranslateToFeatures(): void {
+        if (MapContextValues.map && vector.current) {
+            const vectorFeatures = vector.current.getSource().getFeaturesCollection();
+            console.log('functionaddTranslateToFeatures -> vectorFeatures', vectorFeatures);
+            const translateInteraction = new Translate();
+            MapContextValues.map.getInteractions().extend([translateInteraction]);
+        }
+    }
+
+    function checkAndRemoveTranslate(): void {
+        MapContextValues.map.getInteractions().forEach(interaction => {
+            if (interaction instanceof Translate) {
+                MapContextValues.map.removeInteraction(interaction);
+            }
+        });
     }
 
     /**
@@ -80,6 +104,14 @@ function VectorLayer(props: IVectorLayerProps): JSX.Element {
             return;
         }
         if (MapContextValues.map && vector.current) {
+            console.log('props.withTranslate', props.withTranslate);
+
+            if (props.withTranslate) {
+                addTranslateToFeatures();
+            } else {
+                checkAndRemoveTranslate();
+            }
+
             MapContextValues.map.addLayer(vector.current);
         }
         //eslint-disable-next-line

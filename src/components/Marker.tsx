@@ -1,17 +1,15 @@
 import React, { useRef, useEffect } from 'react';
-import { Feature, Collection, MapBrowserEvent } from 'ol';
+import { Feature, MapBrowserEvent } from 'ol';
 import { Translate } from 'ol/interaction';
 import Point from 'ol/geom/Point';
 import { useVectorContext } from './Vector';
 import { Style, Fill, Stroke, Icon, Circle } from 'ol/style';
 import { Options } from 'ol/style/Style';
-import { TranslateEvent } from 'ol/interaction/Translate';
 import { usePrevious } from '../custom/hooks';
 import { DEFAULT_COLOR } from '../custom/styles';
 import { useToolTip } from './Tooltip';
 import { usePopup } from './Popup';
 import { isEqual } from '../custom/utils';
-import throttle from 'lodash.throttle';
 
 export interface IMarkerProps {
     position: number[];
@@ -21,13 +19,11 @@ export interface IMarkerProps {
     strokeWidth?: number;
     width?: number;
     isDraggable?: boolean;
+    disableStyling?: boolean;
+    customData?: any;
     onDragEnd?: (coordinate: number[], startCoordinate: number[]) => any;
     updateMarkerLocationOnDrag?: (coordinates: number[]) => boolean;
     children?: React.ReactChild;
-}
-
-interface ITranslateEvent extends TranslateEvent {
-    startCoordinate: number[];
 }
 
 /**
@@ -35,10 +31,14 @@ interface ITranslateEvent extends TranslateEvent {
  * @param {IMarkerProps} props marker props
  * @returns {Style} style to be applied to the marker
  */
-function getMarkerStyles(props: IMarkerProps): Style {
+function getMarkerStyles(props: IMarkerProps): Style | null {
     const { color, icon, width } = props;
 
     let options: Options = {};
+
+    if (props.disableStyling) {
+        return null;
+    }
 
     if (icon) {
         options.image = new Icon({ src: icon });
@@ -87,68 +87,21 @@ function Marker(props: IMarkerProps): JSX.Element {
             // set the position of the marker
             geometry: new Point(props.position)
         });
-        marker.current.set('color', props.color);
+
+        if (props.color) {
+            marker.current.set('color', props.color);
+        }
         // set marker styles
-        marker.current.setStyle(getMarkerStyles(props));
+        if (!props.disableStyling) {
+            marker.current.setStyle(getMarkerStyles(props));
+        }
+
+        if (props.customData) {
+            marker.current.set('custom', props.customData);
+        }
 
         // Add the marker as a feature to vector layer
         VectorContext.vector.getSource().addFeature(marker.current);
-    }
-
-    /**
-     * @description drag event handler
-     * @param {ITranslateEvent} event
-     */
-    function handleDragEnd(event: ITranslateEvent): void {
-        // check if callback is passed through props and call it with new and old
-        // coordinates
-        if (
-            props.updateMarkerLocationOnDrag &&
-            !props.updateMarkerLocationOnDrag(event.coordinate) &&
-            marker.current
-        ) {
-            marker.current.setGeometry(new Point(event.startCoordinate));
-        }
-        props.onDragEnd && props.onDragEnd(event.coordinate, event.startCoordinate);
-    }
-
-    /**
-     * @description Check if marker have a tooltip and shows it
-     * @param {MapBrowserEvent} event
-     */
-    function checkForTooltip(event: MapBrowserEvent) {
-        const { map } = VectorContext;
-
-        map.forEachFeatureAtPixel(event.pixel, function(feature: Feature) {
-            if (!feature) {
-                return;
-            }
-            if (feature.get('withTooltip') && feature.get('tooltipId') === TooltipContext.id) {
-                // @ts-ignore
-                TooltipContext.show(feature.getGeometry().getCoordinates());
-                return;
-            } else {
-                return;
-            }
-        });
-    }
-
-    /**
-     * @description Creates the tooltip for current marker
-     * @param {MapBrowserEvent} event
-     */
-    function createTooltip(event: MapBrowserEvent): void {
-        TooltipContext.hide();
-
-        if (event.dragging) {
-            return;
-        }
-
-        const throtteledCheck = throttle(checkForTooltip, 100, { trailing: true });
-
-        throtteledCheck(event);
-
-        return;
     }
 
     /**
@@ -205,22 +158,12 @@ function Marker(props: IMarkerProps): JSX.Element {
         if (VectorContext.vector) {
             addMarkerToMap(props);
         }
-        if (props.isDraggable && VectorContext.map && marker.current) {
-            // create translate to bind translatable features to map context interaction
-            translate = new Translate({
-                features: new Collection([marker.current])
-            });
-            // handle dragend
-            translate.on('translateend', handleDragEnd);
-            // bind the interaction to map context
-            VectorContext.map.getInteractions().push(translate);
-        }
         // check if marker has tooltip and creates it
         if (TooltipContext.tooltip && map && marker.current) {
             marker.current.set('withTooltip', true);
-            marker.current.set('tooltipId', TooltipContext.id);
+            // marker.current.set('tooltipId', TooltipContext.id);
 
-            map.on('pointermove', createTooltip);
+            // map.on('pointermove', createTooltip);
         }
 
         if (PopupContext.popup && map) {
@@ -257,7 +200,7 @@ function Marker(props: IMarkerProps): JSX.Element {
      * component did update with new styles
      */
     useEffect((): void => {
-        if (marker.current) {
+        if (marker.current && !props.disableStyling) {
             // set new styles
             marker.current.setStyle(getMarkerStyles(props));
         }

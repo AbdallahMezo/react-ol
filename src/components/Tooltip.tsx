@@ -1,14 +1,15 @@
-import React, { useEffect, useRef, useContext } from 'react';
+import React, { useEffect, useRef, useContext, useState } from 'react';
 import Overlay, { Options as OverlayOptions, default as OverlayType } from 'ol/Overlay';
 import OverlayPositioning from 'ol/OverlayPositioning';
 import { Coordinate } from 'ol/coordinate';
 import { useMapContext } from './Map';
 import { createContext } from '../core/context';
 import uuid from 'uuid';
+import { MapBrowserEvent } from 'ol';
 export interface ITooltipProps {
     title: string;
     children: React.ReactNode;
-    component?: React.ReactElement;
+    component?: (feature: any) => React.ReactElement;
     position?: OverlayPositioning;
     id?: string;
     className?: string;
@@ -42,6 +43,7 @@ const TooltipContext = createContext({});
 function Tooltip(props: ITooltipProps): JSX.Element {
     const tooltipEl = useRef<HTMLDivElement>(null);
     const tooltip = useRef<OverlayType>();
+    const [feature, setFeature] = useState<any>();
     const { map } = useMapContext();
 
     /**
@@ -69,6 +71,22 @@ function Tooltip(props: ITooltipProps): JSX.Element {
         }
     }
 
+    function handleMapHover(event: MapBrowserEvent): void {
+        const pixel = event.pixel;
+        hideTooltip();
+        setFeature(undefined);
+        if (map.getView().getInteracting() || map.getView().getAnimating()) {
+            return;
+        }
+        map.forEachFeatureAtPixel(pixel, feature => {
+            if (feature.get('withTooltip')) {
+                // @ts-ignore
+                showTooltip(feature.getGeometry().getCoordinates());
+                setFeature(feature);
+            }
+        });
+    }
+
     useEffect(() => {
         if (tooltipEl.current && map) {
             if (!props.component) {
@@ -76,6 +94,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
             }
             tooltip.current = new Overlay(generateTooltipOptions(props, tooltipEl.current));
             map.addOverlay(tooltip.current);
+            map.on('pointermove', handleMapHover);
         }
         return useEffectCleanup;
     }, [map]);
@@ -91,7 +110,7 @@ function Tooltip(props: ITooltipProps): JSX.Element {
 
     return (
         <div ref={tooltipEl}>
-            {props.component && props.component}
+            {props.component && props.component(feature)}
             <TooltipContext.Provider
                 value={{ tooltip: tooltip, show: showTooltip, hide: hideTooltip, id: uuid() }}
             >
